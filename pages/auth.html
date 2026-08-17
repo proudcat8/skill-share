@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome - SkillShare</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="../css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+  <div class="auth-box">
+    <div class="logo">Skill<span>Share</span></div>
+    <p class="subtitle">Enter a username to get started</p>
+    <form onsubmit="event.preventDefault(); go()">
+      <div class="form-group">
+        <label>Username</label>
+        <input class="input" id="username" placeholder="e.g. Aditya" autofocus maxlength="20" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">Enter</button>
+    </form>
+  </div>
+  <script>
+    if (localStorage.getItem('ss_username')) location.href = 'feed.html';
+    function go() {
+      const name = document.getElementById('username').value.trim();
+      if (!name) return;
+      localStorage.setItem('ss_username', name);
+      location.href = 'feed.html';
+    }
+  </script>
+</body>
+</html>

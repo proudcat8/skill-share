@@ -1,17 +1,45 @@
-an app in which people from all across the world can share ideas and skills with eachother for example a grandma from italy can teach a person in US about how to make pasta and the person in US can teach the grandma how to use social media etc. by sir Aaradhy
+# SkillShare
 
-making a webapp
- 
- Tech stack - Aaradhy
- 1) Frontend -> React js , HTML, CSS
- 2) Backend -> Rust - Tauri
+Learn and teach skills from people around the world.
 
-Tech stack - Aditya
-1) Frontend -> HTML, Css, react
-2) Backend -> js, firebase
+A simple web app where users can share skills, chat, schedule sessions, and video call — built with vanilla HTML, CSS, and JavaScript.
 
-App features
-1) A social media like interface which consists of people showing there skills and what they want to learn 
-2) people can do chating
-3) vedio call feature using free api of zoom ir any ohter vedio calling app
-4) Scheduling
+## Features
+
+- **Feed** — Share what you can teach or what you want to learn
+- **Messages** — Chat with other users
+- **Schedule** — Book skill-sharing sessions
+- **Video Calls** — Face-to-face learning (coming soon)
+
+## Getting Started
+
+1. Open `index.html` in your browser (or use a local server)
+2. Enter a username to get started
+3. Browse the feed and explore skills
+
+## Project Structure
+
+```
+skillshare/
+├── index.html          # Landing page
+├── css/style.css       # All styles
+├── js/
+│   ├── constants.js    # Skill categories
+│   ├── utils.js        # Helper functions
+│   └── layout.js       # Shared sidebar/topbar
+└── pages/
+    ├── auth.html       # Username entry
+    ├── feed.html       # Skill feed
+    ├── profile.html    # User profile
+    ├── messages.html   # Chat UI
+    ├── schedule.html   # Calendar & sessions
+    └── call.html       # Video call UI
+```
+
+## Tech Stack
+
+- HTML, CSS, JavaScript (no frameworks)
+- Google Fonts (Inter)
+- Dark theme with indigo primary color
+
+## Built by Aditya

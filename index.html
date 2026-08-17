@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillShare - Learn & Teach the World</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="landing-page" class="page active">
+    <nav class="landing-nav">
+      <div class="logo">Skill<span>Share</span></div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#skills">Skills</a>
+        <a href="pages/auth.html" class="btn btn-primary btn-sm">Get Started</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-content">
+        <span class="badge">Connecting the world through skills</span>
+        <h1>Learn anything from<br><span class="gradient-text">anyone in the world</span></h1>
+        <p>A grandma in Italy teaches you pasta. You teach her social media. Real skills, real people, real connections.</p>
+        <a href="pages/auth.html" class="btn btn-primary btn-lg">Start Sharing Skills &rarr;</a>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <h2 class="anim">Everything you need to <span class="highlight">share & learn</span></h2>
+      <div class="features-grid stagger">
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <h3>Share Skills</h3>
+          <p>Post what you can teach and discover what others want to share</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📹</div>
+          <h3>Video Calls</h3>
+          <p>Learn face-to-face with built-in HD video calls</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📅</div>
+          <h3>Schedule Sessions</h3>
+          <p>Book convenient times for one-on-one skill-sharing</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌍</div>
+          <h3>Global Community</h3>
+          <p>Connect with people from every corner of the world</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="skills" class="skills-section">
+      <h2 class="anim">Skills you can explore</h2>
+      <div class="skills-cloud stagger" id="skills-cloud"></div>
+    </section>
+
+    <section class="testimonials">
+      <h2 class="anim">Loved by people <span class="highlight">worldwide</span></h2>
+      <div class="testimonials-grid stagger">
+        <div class="testimonial-card">
+          <p>"I taught someone from Tokyo how to make authentic pasta, and they taught me to use Instagram!"</p>
+          <div class="testimonial-author"><span class="flag">🇮🇹</span><div><strong>Maria R.</strong><br><small>Italy</small></div></div>
+        </div>
+        <div class="testimonial-card">
+          <p>"Connected with a grandmother in India who taught me Ayurvedic cooking. Incredible experience."</p>
+          <div class="testimonial-author"><span class="flag">🇺🇸</span><div><strong>James K.</strong><br><small>USA</small></div></div>
+        </div>
+        <div class="testimonial-card">
+          <p>"Finally found someone to teach me watercolor painting. The video call feature is amazing."</p>
+          <div class="testimonial-author"><span class="flag">🇯🇵</span><div><strong>Yuki T.</strong><br><small>Japan</small></div></div>
+        </div>
+      </div>
+    </section>
+
+    <footer><p>SkillShare &mdash; Built by Aditya</p></footer>
+  </div>
+
+  <script src="js/constants.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    const cloud = document.getElementById('skills-cloud');
+    SKILL_CATEGORIES.forEach(c => {
+      cloud.innerHTML += '<span class="skill-pill">' + c.icon + ' ' + c.label + '</span>';
+    });
+    setTimeout(initScrollAnimations, 200);
+  </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feed - SkillShare</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="../css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="../js/constants.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    const MOCK_POSTS = [
+      { id:'1', author_name:'Maria Rossi', author_avatar:'', type:'teach', body:'I can teach you how to make authentic Italian pasta from scratch. My nonna taught me these recipes over 50 years ago!', skill_tag:'Pasta Making', category:'cooking', likes:['u2','u3'], comments_count:5, created_at: new Date(Date.now()-3600000) },
+      { id:'2', author_name:'James Kim', author_avatar:'', type:'learn', body:'Looking for someone to teach me watercolor painting. I want to paint landscapes like the ones I saw in Japan.', skill_tag:'Watercolor', category:'art', likes:['u1'], comments_count:2, created_at: new Date(Date.now()-7200000) },
+      { id:'3', author_name:'Yuki Tanaka', author_avatar:'', type:'teach', body:'I can teach you Japanese calligraphy (Shodo). It is a beautiful art form that combines meditation with creativity.', skill_tag:'Calligraphy', category:'art', likes:['u1','u4','u5'], comments_count:8, created_at: new Date(Date.now()-86400000) },
+      { id:'4', author_name:'Aditya', author_avatar:'', type:'teach', body:'I can help you get started with web development. HTML, CSS, JavaScript — I will make it simple and fun!', skill_tag:'Web Development', category:'technology', likes:['u2'], comments_count:3, created_at: new Date(Date.now()-172800000) },
+      { id:'5', author_name:'Sarah Chen', author_avatar:'', type:'learn', body:'Does anyone want to teach me how to cook Thai food? I especially want to learn Pad Thai and Green Curry.', skill_tag:'Thai Cooking', category:'cooking', likes:['u1','u3'], comments_count:4, created_at: new Date(Date.now()-259200000) },
+    ];
+
+    let activeCategory = 'all';
+    let postType = 'teach';
+
+    buildLayout();
+    renderFeed();
+
+    function renderFeed() {
+      const filterHTML = `<button class="filter-pill active" onclick="filterCategory('all',this)">All Skills</button>` +
+        SKILL_CATEGORIES.map(c => `<button class="filter-pill" onclick="filterCategory('${c.id}',this)">${c.icon} ${c.label}</button>`).join('');
+
+      document.getElementById('app-content').innerHTML = `
+        <div class="feed-container">
+          <div class="post-composer anim">
+            <div class="composer-header">
+              <div class="avatar">${getInitials(getMockUser().display_name)}</div>
+              <textarea class="composer-input" placeholder="What skill can you share with the world?" rows="1" onfocus="expandComposer()"></textarea>
+            </div>
+            <div class="composer-expanded" id="composer-expanded">
+              <div class="type-toggle">
+                <button class="type-btn active-teach" id="type-teach" onclick="setType('teach')">🎓 I can teach this</button>
+                <button class="type-btn" id="type-learn" onclick="setType('learn')">📚 I want to learn this</button>
+              </div>
+              <div class="composer-row">
+                <input class="input" id="skill-input" placeholder="Skill name (e.g. Pasta Making)">
+                <select class="select" id="category-select" style="max-width:180px">
+                  <option value="">Category</option>
+                  ${SKILL_CATEGORIES.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join('')}
+                </select>
+              </div>
+              <div class="composer-actions">
+                <button class="btn btn-ghost btn-sm" onclick="collapseComposer()">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="showToast('Database not connected yet','info')">Share</button>
+              </div>
+            </div>
+          </div>
+          <div class="filter-bar anim" style="animation-delay:.1s">${filterHTML}</div>
+          <div id="posts-list" class="stagger"></div>
+        </div>`;
+      loadPosts();
+    }
+
+    function setType(type) {
+      postType = type;
+      document.getElementById('type-teach').className = 'type-btn' + (type === 'teach' ? ' active-teach' : '');
+      document.getElementById('type-learn').className = 'type-btn' + (type === 'learn' ? ' active-learn' : '');
+    }
+    function expandComposer() { document.getElementById('composer-expanded').classList.add('show'); }
+    function collapseComposer() { document.getElementById('composer-expanded').classList.remove('show'); }
+
+    function filterCategory(cat, el) {
+      activeCategory = cat;
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      const list = document.getElementById('posts-list');
+      list.classList.remove('visible');
+      setTimeout(() => { loadPosts(); list.classList.add('visible'); }, 100);
+    }
+
+    function loadPosts() {
+      const filtered = activeCategory === 'all' ? MOCK_POSTS : MOCK_POSTS.filter(p => p.category === activeCategory);
+      const el = document.getElementById('posts-list');
+      if (!filtered.length) { el.innerHTML = '<div class="empty-state anim"><div class="icon">✨</div><p>No posts yet. Be the first to share a skill!</p></div>'; initScrollAnimations(); return; }
+      el.innerHTML = filtered.map(p => {
+        const cat = getCategoryInfo(p.category);
+        const badge = p.type === 'teach' ? '<span class="post-badge teach">🎓 Teaching</span>' : '<span class="post-badge learn">📚 Learning</span>';
+        return `
+          <div class="post-card">
+            <div class="post-header">
+              <div class="avatar">${getInitials(p.author_name)}</div>
+              <div><div class="post-author">${escapeHtml(p.author_name)}</div><div class="post-time">${timeAgo(p.created_at)}</div></div>
+              ${badge}
+            </div>
+            <div class="post-body">${escapeHtml(p.body)}</div>
+            <div class="post-skill-tag" style="border-color:${cat.color}40;color:${cat.color};background:${cat.color}15">${cat.icon} ${escapeHtml(p.skill_tag)}</div>
+            <div class="post-actions">
+              <button class="post-action" onclick="this.classList.toggle('liked');showToast('Database not connected','info')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span>${(p.likes||[]).length}</span>
+              </button>
+              <button class="post-action" onclick="showToast('Database not connected','info')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span>${p.comments_count||0}</span>
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+      initScrollAnimations();
+    }
+  </script>
+</body>
+</html>

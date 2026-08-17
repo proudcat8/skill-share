@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule - SkillShare</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="../css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="../js/constants.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    buildLayout();
+
+    let calMonth = new Date().getMonth(), calYear = new Date().getFullYear(), selectedDate = null;
+
+    const MOCK_SESSIONS = [
+      { skill:'Pasta Making', other:'Maria Rossi', isOrg:false, status:'accepted', date:new Date(Date.now()+86400000*2), duration:60 },
+      { skill:'Web Development', other:'James Kim', isOrg:true, status:'pending', date:new Date(Date.now()+86400000*5), duration:90 },
+    ];
+
+    renderSchedule();
+    renderCalendar();
+
+    function renderSchedule() {
+      document.getElementById('app-content').innerHTML = `
+        <div class="schedule-container">
+          <div style="display:grid;grid-template-columns:1fr 340px;gap:24px">
+            <div class="calendar-card anim">
+              <div class="cal-header"><h3 id="cal-title"></h3><div class="cal-nav"><button onclick="changeMonth(-1)">&lsaquo;</button><button onclick="changeMonth(1)">&rsaquo;</button></div></div>
+              <div class="cal-grid" id="cal-grid"></div>
+            </div>
+            <div class="sessions-list anim-right" style="animation-delay:.15s">
+              <h3 id="sessions-title">Upcoming Sessions</h3>
+              <div id="sessions-list"></div>
+            </div>
+          </div>
+        </div>`;
+      renderCalendar();
+      renderSessionList();
+    }
+
+    function renderCalendar() {
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const titleEl = document.getElementById('cal-title');
+      if (titleEl) titleEl.textContent = months[calMonth] + ' ' + calYear;
+      const first = new Date(calYear, calMonth, 1), last = new Date(calYear, calMonth + 1, 0), today = new Date();
+      let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-day-label">${d}</div>`).join('');
+      for (let i = 0; i < first.getDay(); i++) html += '<div></div>';
+      for (let d = 1; d <= last.getDate(); d++) {
+        const date = new Date(calYear, calMonth, d);
+        const isToday = date.toDateString() === today.toDateString();
+        const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+        let cls = 'cal-day'; if (isToday) cls += ' today'; if (isSelected) cls += ' selected';
+        html += `<div class="${cls}" onclick="selectDay(${calYear},${calMonth},${d})" style="animation:popIn .3s ${d*.01}s both">${d}</div>`;
+      }
+      const grid = document.getElementById('cal-grid');
+      if (grid) grid.innerHTML = html;
+    }
+
+    function changeMonth(dir) { calMonth += dir; if (calMonth > 11) { calMonth = 0; calYear++; } if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+    function selectDay(y, m, d) { selectedDate = new Date(y, m, d); renderCalendar(); renderSessionList(); }
+
+    function renderSessionList() {
+      const el = document.getElementById('sessions-list');
+      if (!el) return;
+      const title = document.getElementById('sessions-title');
+      title.textContent = selectedDate ? 'Sessions on ' + selectedDate.toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'Upcoming Sessions';
+      el.innerHTML = MOCK_SESSIONS.map((s, i) => `
+        <div class="session-card" style="animation:fadeInRight .4s ${i*.1}s both">
+          <span class="session-status ${s.status}">${s.status}</span>
+          <div style="font-size:12px;color:var(--muted)">${s.isOrg ? 'Teaching ' + s.other : s.other + ' is teaching'}</div>
+          <div class="session-skill">${s.skill}</div>
+          <div class="session-meta">🕐 ${formatSessionDate(s.date)} · ${s.duration}m</div>
+          <div class="session-actions">
+            ${s.status === 'accepted' ? `<button class="btn btn-primary btn-sm" onclick="location.href='call.html?session=mock'">📹 Join Call</button>` : ''}
+            ${s.status === 'pending' && !s.isOrg ? `<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="showToast('Database not connected','info')">Accept</button>` : ''}
+          </div>
+        </div>
+      `).join('') || '<p style="text-align:center;color:var(--muted);font-size:13px;padding:20px">No sessions</p>';
+    }
+  </script>
+</body>
+</html>

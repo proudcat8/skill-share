@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages - SkillShare</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <link rel="stylesheet" href="../css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="../js/constants.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    buildLayout();
+
+    const MOCK_CONVERSATIONS = [
+      { id:'c1', name:'Maria Rossi', last:'Hey! I can teach you pasta making this weekend', time:'2h ago', unread:2 },
+      { id:'c2', name:'James Kim', last:'Thanks for the web dev tips!', time:'1d ago', unread:0 },
+      { id:'c3', name:'Yuki Tanaka', last:'When are you free for the call?', time:'3d ago', unread:0 },
+    ];
+
+    const MOCK_MESSAGES = [
+      { from:'them', text:'Hi! I saw your post about learning pasta making. I can definitely teach you!', time:'2h ago' },
+      { from:'me', text:'That would be amazing! When are you free?', time:'1h ago' },
+      { from:'them', text:'How about this Saturday afternoon? We can do it over video call', time:'45m ago' },
+    ];
+
+    document.getElementById('app-content').innerHTML = `
+      <div class="messages-layout">
+        <div class="conv-list" id="conv-list">
+          <div class="conv-header">Messages</div>
+          <div class="conv-items">
+            ${MOCK_CONVERSATIONS.map((c, i) => `
+              <div class="conv-item ${c.id==='c1'?'active':''}" onclick="showToast('Chat will work with database','info')" style="animation:fadeInLeft .4s ${i*.08}s both">
+                <div class="avatar">${getInitials(c.name)}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span class="conv-name">${c.name}</span>
+                    <span class="conv-time">${c.time}</span>
+                  </div>
+                  <span class="conv-last">${c.last}</span>
+                </div>
+                ${c.unread ? `<span class="conv-unread">${c.unread}</span>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="chat-panel" id="chat-panel">
+          <div class="chat-header">
+            <div class="avatar" style="width:36px;height:36px;font-size:13px">${getInitials('Maria Rossi')}</div>
+            <div class="chat-header-info"><div class="chat-header-name">Maria Rossi</div></div>
+            <div class="chat-header-actions"><button class="btn btn-ghost btn-sm">📅</button></div>
+          </div>
+          <div class="chat-messages" id="chat-messages">
+            ${MOCK_MESSAGES.map((m, i) => `
+              <div class="msg ${m.from==='me'?'sent':'received'}" style="animation:popIn .3s ${.1+i*.15}s both">
+                <div>
+                  <div class="msg-bubble">${m.text}</div>
+                  <div class="msg-time">${m.time}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="chat-input-area">
+            <textarea class="textarea" placeholder="Type a message..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();showToast('Database not connected','info')}"></textarea>
+            <button class="btn btn-primary btn-sm" onclick="showToast('Database not connected','info')">Send</button>
+          </div>
+        </div>
+      </div>`;
+  </script>
+</body>
+</html>
