@@ -15,6 +15,3 @@ App features
 2) people can do chating
 3) vedio call feature using free api of zoom ir any ohter vedio calling app
 4) Scheduling
-
-More technical docs
-1) 
