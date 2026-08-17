@@ -6,7 +6,7 @@ making a webapp
  1) Frontend -> React js , HTML, CSS
  2) Backend -> Rust - Tauri
 
-Tech stack
+Tech stack - Aditya
 1) Frontend -> HTML, Css, react
 2) Backend -> js, firebase
 
