@@ -2,65 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Feed - SkillShare</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a12">
+  <title>Feed — Skill Swap</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%235b7cf7'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
   <link rel="stylesheet" href="../css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="app"></div>
-
   <script src="../js/constants.js"></script>
   <script src="../js/utils.js"></script>
   <script src="../js/layout.js"></script>
   <script>
-    const MOCK_POSTS = [
-      { id:'1', author_name:'Maria Rossi', author_avatar:'', type:'teach', body:'I can teach you how to make authentic Italian pasta from scratch. My nonna taught me these recipes over 50 years ago!', skill_tag:'Pasta Making', category:'cooking', likes:['u2','u3'], comments_count:5, created_at: new Date(Date.now()-3600000) },
-      { id:'2', author_name:'James Kim', author_avatar:'', type:'learn', body:'Looking for someone to teach me watercolor painting. I want to paint landscapes like the ones I saw in Japan.', skill_tag:'Watercolor', category:'art', likes:['u1'], comments_count:2, created_at: new Date(Date.now()-7200000) },
-      { id:'3', author_name:'Yuki Tanaka', author_avatar:'', type:'teach', body:'I can teach you Japanese calligraphy (Shodo). It is a beautiful art form that combines meditation with creativity.', skill_tag:'Calligraphy', category:'art', likes:['u1','u4','u5'], comments_count:8, created_at: new Date(Date.now()-86400000) },
-      { id:'4', author_name:'Aditya', author_avatar:'', type:'teach', body:'I can help you get started with web development. HTML, CSS, JavaScript — I will make it simple and fun!', skill_tag:'Web Development', category:'technology', likes:['u2'], comments_count:3, created_at: new Date(Date.now()-172800000) },
-      { id:'5', author_name:'Sarah Chen', author_avatar:'', type:'learn', body:'Does anyone want to teach me how to cook Thai food? I especially want to learn Pad Thai and Green Curry.', skill_tag:'Thai Cooking', category:'cooking', likes:['u1','u3'], comments_count:4, created_at: new Date(Date.now()-259200000) },
-    ];
-
     let activeCategory = 'all';
     let postType = 'teach';
 
-    buildLayout();
-    renderFeed();
+    initLayout().then(function() { renderFeed(); });
 
     function renderFeed() {
-      const filterHTML = `<button class="filter-pill active" onclick="filterCategory('all',this)">All Skills</button>` +
-        SKILL_CATEGORIES.map(c => `<button class="filter-pill" onclick="filterCategory('${c.id}',this)">${c.icon} ${c.label}</button>`).join('');
+      var filterHTML = '<button class="filter-pill active" onclick="filterCategory(\'all\',this)">All Skills</button>' +
+        SKILL_CATEGORIES.map(function(c) {
+          return '<button class="filter-pill" onclick="filterCategory(\'' + c.id + '\',this)">' + c.icon + ' ' + c.label + '</button>';
+        }).join('');
 
-      document.getElementById('app-content').innerHTML = `
-        <div class="feed-container">
-          <div class="post-composer anim">
-            <div class="composer-header">
-              <div class="avatar">${getInitials(getMockUser().display_name)}</div>
-              <textarea class="composer-input" placeholder="What skill can you share with the world?" rows="1" onfocus="expandComposer()"></textarea>
-            </div>
-            <div class="composer-expanded" id="composer-expanded">
-              <div class="type-toggle">
-                <button class="type-btn active-teach" id="type-teach" onclick="setType('teach')">🎓 I can teach this</button>
-                <button class="type-btn" id="type-learn" onclick="setType('learn')">📚 I want to learn this</button>
-              </div>
-              <div class="composer-row">
-                <input class="input" id="skill-input" placeholder="Skill name (e.g. Pasta Making)">
-                <select class="select" id="category-select" style="max-width:180px">
-                  <option value="">Category</option>
-                  ${SKILL_CATEGORIES.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join('')}
-                </select>
-              </div>
-              <div class="composer-actions">
-                <button class="btn btn-ghost btn-sm" onclick="collapseComposer()">Cancel</button>
-                <button class="btn btn-primary btn-sm" onclick="showToast('Database not connected yet','info')">Share</button>
-              </div>
-            </div>
-          </div>
-          <div class="filter-bar anim" style="animation-delay:.1s">${filterHTML}</div>
-          <div id="posts-list" class="stagger"></div>
-        </div>`;
+      document.getElementById('app-content').innerHTML =
+        '<div class="feed-container">' +
+          '<div class="post-composer anim">' +
+            '<div class="composer-header">' +
+              '<div class="avatar">' + getInitials(currentUser.username) + '</div>' +
+              '<textarea class="composer-input" placeholder="What skill can you share with the world?" rows="1" onfocus="expandComposer()"></textarea>' +
+            '</div>' +
+            '<div class="composer-expanded" id="composer-expanded">' +
+              '<div class="type-toggle">' +
+                '<button class="type-btn active-teach" id="type-teach" onclick="setType(\'teach\')">&#127891; I can teach this</button>' +
+                '<button class="type-btn" id="type-learn" onclick="setType(\'learn\')">&#128218; I want to learn this</button>' +
+              '</div>' +
+              '<textarea class="textarea" id="post-body" placeholder="Tell us about this skill..." rows="3"></textarea>' +
+              '<div class="composer-row">' +
+                '<input class="input" id="skill-input" placeholder="Skill name (e.g. Pasta Making)">' +
+                '<select class="select" id="category-select" style="max-width:180px">' +
+                  '<option value="">Category</option>' +
+                  SKILL_CATEGORIES.map(function(c) {
+                    return '<option value="' + c.id + '">' + c.icon + ' ' + c.label + '</option>';
+                  }).join('') +
+                '</select>' +
+              '</div>' +
+              '<div class="composer-actions">' +
+                '<button class="btn btn-ghost btn-sm" onclick="collapseComposer()">Cancel</button>' +
+                '<button class="btn btn-primary btn-sm" onclick="submitPost()">Share</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="filter-bar anim" style="transition-delay:0.08s">' + filterHTML + '</div>' +
+          '<div id="posts-list" class="stagger"></div>' +
+        '</div>';
+
+      initScrollAnimations();
       loadPosts();
     }
 
@@ -69,47 +72,179 @@
       document.getElementById('type-teach').className = 'type-btn' + (type === 'teach' ? ' active-teach' : '');
       document.getElementById('type-learn').className = 'type-btn' + (type === 'learn' ? ' active-learn' : '');
     }
-    function expandComposer() { document.getElementById('composer-expanded').classList.add('show'); }
-    function collapseComposer() { document.getElementById('composer-expanded').classList.remove('show'); }
+
+    function expandComposer() {
+      document.getElementById('composer-expanded').classList.add('show');
+    }
+
+    function collapseComposer() {
+      document.getElementById('composer-expanded').classList.remove('show');
+    }
+
+    async function submitPost() {
+      var body = document.getElementById('post-body').value.trim();
+      var skill_tag = document.getElementById('skill-input').value.trim();
+      var category = document.getElementById('category-select').value;
+      if (!body || !skill_tag || !category) { showToast('Fill in all fields', 'error'); return; }
+      try {
+        var res = await fetch('/api/posts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: postType, body: body, skill_tag: skill_tag, category: category })
+        });
+        if (!res.ok) { var d = await res.json(); showToast(d.error, 'error'); return; }
+        document.getElementById('post-body').value = '';
+        document.getElementById('skill-input').value = '';
+        document.getElementById('category-select').value = '';
+        collapseComposer();
+        showToast('Post shared!', 'success');
+        loadPosts();
+      } catch (e) { showToast('Error posting', 'error'); }
+    }
 
     function filterCategory(cat, el) {
       activeCategory = cat;
-      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.filter-pill').forEach(function(p) { p.classList.remove('active'); });
       el.classList.add('active');
-      const list = document.getElementById('posts-list');
-      list.classList.remove('visible');
-      setTimeout(() => { loadPosts(); list.classList.add('visible'); }, 100);
+      loadPosts();
     }
 
-    function loadPosts() {
-      const filtered = activeCategory === 'all' ? MOCK_POSTS : MOCK_POSTS.filter(p => p.category === activeCategory);
-      const el = document.getElementById('posts-list');
-      if (!filtered.length) { el.innerHTML = '<div class="empty-state anim"><div class="icon">✨</div><p>No posts yet. Be the first to share a skill!</p></div>'; initScrollAnimations(); return; }
-      el.innerHTML = filtered.map(p => {
-        const cat = getCategoryInfo(p.category);
-        const badge = p.type === 'teach' ? '<span class="post-badge teach">🎓 Teaching</span>' : '<span class="post-badge learn">📚 Learning</span>';
-        return `
-          <div class="post-card">
-            <div class="post-header">
-              <div class="avatar">${getInitials(p.author_name)}</div>
-              <div><div class="post-author">${escapeHtml(p.author_name)}</div><div class="post-time">${timeAgo(p.created_at)}</div></div>
-              ${badge}
-            </div>
-            <div class="post-body">${escapeHtml(p.body)}</div>
-            <div class="post-skill-tag" style="border-color:${cat.color}40;color:${cat.color};background:${cat.color}15">${cat.icon} ${escapeHtml(p.skill_tag)}</div>
-            <div class="post-actions">
-              <button class="post-action" onclick="this.classList.toggle('liked');showToast('Database not connected','info')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                <span>${(p.likes||[]).length}</span>
-              </button>
-              <button class="post-action" onclick="showToast('Database not connected','info')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <span>${p.comments_count||0}</span>
-              </button>
-            </div>
-          </div>`;
+    async function loadPosts() {
+      var url = '/api/posts' + (activeCategory !== 'all' ? '?category=' + activeCategory : '');
+      var res = await fetch(url);
+      var posts = await res.json();
+      var el = document.getElementById('posts-list');
+      if (!posts.length) {
+        el.innerHTML = '<div class="empty-state anim visible"><div class="icon">&#10024;</div><p>No posts yet. Be the first to share a skill!</p></div>';
+        return;
+      }
+      el.innerHTML = posts.map(function(p) {
+        var cat = getCategoryInfo(p.category);
+        var badge = p.type === 'teach'
+          ? '<span class="post-badge teach">&#127891; Teaching</span>'
+          : '<span class="post-badge learn">&#128218; Learning</span>';
+        var likedClass = p.liked ? ' liked' : '';
+        var deleteBtn = p.author_id === currentUser.id
+          ? '<button class="post-action" style="margin-left:auto" onclick="deletePost(' + p.id + ',this)" aria-label="Delete post"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'
+          : '';
+
+        return '<div class="post-card anim visible">' +
+          '<div class="post-header">' +
+            '<div class="avatar">' + getInitials(p.author_name) + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+              '<a class="post-author" href="profile.html?id=' + p.author_id + '">' + escapeHtml(p.author_name) + '</a>' +
+              '<div class="post-time">' + timeAgo(p.created_at) + '</div>' +
+            '</div>' +
+            badge +
+          '</div>' +
+          '<div class="post-body">' + escapeHtml(p.body) + '</div>' +
+          '<div class="post-skill-tag">' + cat.icon + ' ' + escapeHtml(p.skill_tag) + '</div>' +
+          '<div class="post-actions">' +
+            '<button class="post-action' + likedClass + '" onclick="toggleLike(' + p.id + ',this)">' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
+              '<span class="like-count">' + p.like_count + '</span>' +
+            '</button>' +
+            '<button class="post-action" onclick="toggleComments(' + p.id + ')">' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+              '<span class="comment-count">' + p.comments_count + '</span>' +
+            '</button>' +
+            deleteBtn +
+          '</div>' +
+          '<div class="comments-section" id="comments-' + p.id + '">' +
+            '<div class="comments-list" id="comments-list-' + p.id + '"></div>' +
+            '<div class="comment-input-row">' +
+              '<input class="input" id="comment-input-' + p.id + '" placeholder="Write a comment..." onkeydown="if(event.key===\'Enter\')addComment(' + p.id + ')">' +
+              '<button class="btn btn-primary btn-sm" onclick="addComment(' + p.id + ')">Post</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
       }).join('');
+
       initScrollAnimations();
+    }
+
+    async function toggleComments(postId) {
+      var section = document.getElementById('comments-' + postId);
+      var isOpen = section.classList.contains('open');
+      section.classList.toggle('open');
+      if (!isOpen) {
+        var res = await fetch('/api/posts/' + postId + '/comments');
+        var comments = await res.json();
+        var list = document.getElementById('comments-list-' + postId);
+        if (!comments.length) {
+          list.innerHTML = '<p style="font-size:13px;color:var(--text-tertiary);padding:4px 0">No comments yet</p>';
+          return;
+        }
+        list.innerHTML = comments.map(function(c) {
+          var deleteBtn = c.author_id === currentUser.id
+            ? '<button class="post-action" style="flex-shrink:0;padding:2px" onclick="deleteComment(' + c.id + ')" aria-label="Delete comment"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+            : '';
+          return '<div class="comment" id="comment-' + c.id + '">' +
+            '<div class="avatar">' + getInitials(c.author_name) + '</div>' +
+            '<div style="flex:1">' +
+              '<div class="comment-author">' + escapeHtml(c.author_name) + '<span class="comment-time">' + timeAgo(c.created_at) + '</span></div>' +
+              '<div class="comment-text">' + escapeHtml(c.body) + '</div>' +
+            '</div>' +
+            deleteBtn +
+          '</div>';
+        }).join('');
+      }
+    }
+
+    async function deleteComment(commentId) {
+      if (!confirm('Delete comment?')) return;
+      try {
+        await fetch('/api/comments/' + commentId, { method: 'DELETE' });
+        var el = document.getElementById('comment-' + commentId);
+        if (el) {
+          el.style.transition = 'opacity 0.2s, transform 0.2s';
+          el.style.opacity = '0';
+          el.style.transform = 'translateX(12px)';
+          setTimeout(function() { el.remove(); }, 200);
+        }
+        showToast('Comment deleted', 'success');
+      } catch (e) { showToast('Error', 'error'); }
+    }
+
+    async function addComment(postId) {
+      var input = document.getElementById('comment-input-' + postId);
+      var body = input.value.trim();
+      if (!body) return;
+      try {
+        await fetch('/api/posts/' + postId + '/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body: body })
+        });
+        input.value = '';
+        toggleComments(postId);
+        setTimeout(function() { toggleComments(postId); }, 80);
+        var countEl = document.querySelector('#comments-' + postId).closest('.post-card').querySelector('.comment-count');
+        countEl.textContent = parseInt(countEl.textContent) + 1;
+      } catch (e) { showToast('Error commenting', 'error'); }
+    }
+
+    async function toggleLike(postId, btn) {
+      try {
+        var res = await fetch('/api/posts/' + postId + '/like', { method: 'POST' });
+        var data = await res.json();
+        btn.classList.toggle('liked', data.liked);
+        var count = btn.querySelector('.like-count');
+        count.textContent = parseInt(count.textContent) + (data.liked ? 1 : -1);
+      } catch (e) {}
+    }
+
+    async function deletePost(postId, btn) {
+      if (!confirm('Delete this post?')) return;
+      try {
+        await fetch('/api/posts/' + postId, { method: 'DELETE' });
+        var card = btn.closest('.post-card');
+        card.style.transition = 'opacity 0.2s, transform 0.2s';
+        card.style.transform = 'translateY(-8px)';
+        card.style.opacity = '0';
+        setTimeout(function() { card.remove(); }, 200);
+        showToast('Post deleted', 'success');
+      } catch (e) { showToast('Error deleting', 'error'); }
     }
   </script>
 </body>

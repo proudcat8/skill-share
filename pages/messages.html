@@ -2,75 +2,210 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Messages - SkillShare</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a12">
+  <title>Messages — Skill Swap</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%235b7cf7'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
   <link rel="stylesheet" href="../css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="app"></div>
-
   <script src="../js/constants.js"></script>
   <script src="../js/utils.js"></script>
   <script src="../js/layout.js"></script>
   <script>
-    buildLayout();
+    var activeConv = null;
+    var lastMsgId = 0;
+    var pollTimer = null;
 
-    const MOCK_CONVERSATIONS = [
-      { id:'c1', name:'Maria Rossi', last:'Hey! I can teach you pasta making this weekend', time:'2h ago', unread:2 },
-      { id:'c2', name:'James Kim', last:'Thanks for the web dev tips!', time:'1d ago', unread:0 },
-      { id:'c3', name:'Yuki Tanaka', last:'When are you free for the call?', time:'3d ago', unread:0 },
-    ];
+    initLayout().then(function() {
+      renderMessages();
+      loadConversations();
+    });
 
-    const MOCK_MESSAGES = [
-      { from:'them', text:'Hi! I saw your post about learning pasta making. I can definitely teach you!', time:'2h ago' },
-      { from:'me', text:'That would be amazing! When are you free?', time:'1h ago' },
-      { from:'them', text:'How about this Saturday afternoon? We can do it over video call', time:'45m ago' },
-    ];
+    function isMobile() { return window.innerWidth <= 768; }
 
-    document.getElementById('app-content').innerHTML = `
-      <div class="messages-layout">
-        <div class="conv-list" id="conv-list">
-          <div class="conv-header">Messages</div>
-          <div class="conv-items">
-            ${MOCK_CONVERSATIONS.map((c, i) => `
-              <div class="conv-item ${c.id==='c1'?'active':''}" onclick="showToast('Chat will work with database','info')" style="animation:fadeInLeft .4s ${i*.08}s both">
-                <div class="avatar">${getInitials(c.name)}</div>
-                <div style="flex:1;min-width:0">
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span class="conv-name">${c.name}</span>
-                    <span class="conv-time">${c.time}</span>
-                  </div>
-                  <span class="conv-last">${c.last}</span>
-                </div>
-                ${c.unread ? `<span class="conv-unread">${c.unread}</span>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        <div class="chat-panel" id="chat-panel">
-          <div class="chat-header">
-            <div class="avatar" style="width:36px;height:36px;font-size:13px">${getInitials('Maria Rossi')}</div>
-            <div class="chat-header-info"><div class="chat-header-name">Maria Rossi</div></div>
-            <div class="chat-header-actions"><button class="btn btn-ghost btn-sm">📅</button></div>
-          </div>
-          <div class="chat-messages" id="chat-messages">
-            ${MOCK_MESSAGES.map((m, i) => `
-              <div class="msg ${m.from==='me'?'sent':'received'}" style="animation:popIn .3s ${.1+i*.15}s both">
-                <div>
-                  <div class="msg-bubble">${m.text}</div>
-                  <div class="msg-time">${m.time}</div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-          <div class="chat-input-area">
-            <textarea class="textarea" placeholder="Type a message..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();showToast('Database not connected','info')}"></textarea>
-            <button class="btn btn-primary btn-sm" onclick="showToast('Database not connected','info')">Send</button>
-          </div>
-        </div>
-      </div>`;
+    function renderMessages() {
+      document.getElementById('app-content').innerHTML =
+        '<div class="messages-layout">' +
+          '<div class="conv-list" id="conv-list">' +
+            '<div class="conv-header">Messages<button class="btn btn-primary btn-sm" onclick="showNewChat()">+</button></div>' +
+            '<div id="new-chat-search" style="display:none;padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--border-subtle)">' +
+              '<input class="input" id="user-search" placeholder="Search username..." oninput="searchUsers()" style="font-size:13px;padding:var(--sp-2) var(--sp-3)">' +
+              '<div id="user-results"></div>' +
+            '</div>' +
+            '<div class="conv-items" id="conv-items"></div>' +
+          '</div>' +
+          '<div class="chat-panel" id="chat-panel">' +
+            '<div class="empty-chat">' +
+              '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity:0.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+              '<p>Select a conversation or start a new one</p>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function showConvList() {
+      document.getElementById('conv-list').classList.remove('conv-hidden');
+      document.getElementById('chat-panel').classList.add('chat-hidden');
+    }
+
+    function showChatPanel() {
+      document.getElementById('conv-list').classList.add('conv-hidden');
+      document.getElementById('chat-panel').classList.remove('chat-hidden');
+    }
+
+    function showNewChat() {
+      var el = document.getElementById('new-chat-search');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      if (el.style.display === 'block') document.getElementById('user-search').focus();
+    }
+
+    async function searchUsers() {
+      var q = document.getElementById('user-search').value.trim();
+      var resEl = document.getElementById('user-results');
+      if (!q) { resEl.innerHTML = ''; return; }
+      var res = await fetch('/api/users?q=' + encodeURIComponent(q));
+      var users = await res.json();
+      if (!users.length) { resEl.innerHTML = '<p style="font-size:12px;color:var(--text-tertiary);padding:var(--sp-2)">No users found</p>'; return; }
+      resEl.innerHTML = users.map(function(u) {
+        return '<div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2);cursor:pointer;border-radius:var(--radius-sm);transition:background 0.15s" onmouseover="this.style.background=\'var(--bg-raised)\'" onmouseout="this.style.background=\'\'" onclick="openChat(' + u.id + ',\'' + escapeHtml(u.username) + '\')">' +
+          '<div class="avatar" style="width:30px;height:30px;font-size:11px">' + getInitials(u.username) + '</div>' +
+          '<span style="font-size:13px">' + escapeHtml(u.username) + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    async function loadConversations() {
+      var res = await fetch('/api/conversations');
+      var convs = await res.json();
+      var el = document.getElementById('conv-items');
+      if (!convs.length) { el.innerHTML = '<p style="text-align:center;color:var(--text-tertiary);font-size:13px;padding:var(--sp-8)">No conversations yet</p>'; return; }
+      el.innerHTML = convs.map(function(c) {
+        return '<div class="conv-item ' + (activeConv === c.id ? 'active' : '') + '" onclick="openChat(' + c.other_id + ',\'' + escapeHtml(c.other_name) + '\',' + c.id + ')">' +
+          '<div class="avatar">' + getInitials(c.other_name) + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center">' +
+              '<span class="conv-name">' + escapeHtml(c.other_name) + '</span>' +
+              '<span class="conv-time">' + (c.last_message_at ? timeAgo(c.last_message_at) : '') + '</span>' +
+            '</div>' +
+            '<span class="conv-last">' + (c.last_message ? escapeHtml(c.last_message) : 'Start chatting...') + '</span>' +
+          '</div>' +
+          (c.unread > 0 ? '<span class="conv-unread">' + c.unread + '</span>' : '') +
+        '</div>';
+      }).join('');
+    }
+
+    async function openChat(userId, username, convId) {
+      if (!convId) {
+        var res = await fetch('/api/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+        var data = await res.json();
+        convId = data.id;
+      }
+      activeConv = convId;
+      lastMsgId = 0;
+      document.getElementById('new-chat-search').style.display = 'none';
+
+      var backBtn = isMobile()
+        ? '<button class="btn btn-ghost btn-sm" onclick="showConvList()" style="margin-right:var(--sp-1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
+        : '';
+
+      document.getElementById('chat-panel').innerHTML =
+        '<div class="chat-header">' +
+          backBtn +
+          '<div class="avatar" style="width:34px;height:34px;font-size:12px">' + getInitials(username) + '</div>' +
+          '<div class="chat-header-info"><div class="chat-header-name">' + escapeHtml(username) + '</div></div>' +
+          '<div style="display:flex;gap:var(--sp-1)">' +
+            '<button class="btn btn-ghost btn-sm" onclick="startVideoCall()" title="Video Call">&#128249;</button>' +
+            '<button class="btn btn-ghost btn-sm" onclick="startPhoneCall()" title="Phone Call">&#128222;</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="chat-messages" id="chat-messages"></div>' +
+        '<div class="chat-input-area">' +
+          '<textarea class="textarea" id="msg-input" placeholder="Type a message..." rows="1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>' +
+          '<button class="btn btn-primary btn-sm" onclick="sendMsg()">Send</button>' +
+        '</div>';
+
+      if (isMobile()) showChatPanel();
+
+      await loadMessages();
+      loadConversations();
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(loadMessages, 2000);
+    }
+
+    async function loadMessages() {
+      if (!activeConv) return;
+      var res = await fetch('/api/conversations/' + activeConv + '/messages' + (lastMsgId ? '?after=' + lastMsgId : ''));
+      var msgs = await res.json();
+      if (!msgs.length) return;
+      var container = document.getElementById('chat-messages');
+      if (!container) return;
+      var wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+      msgs.forEach(function(m) {
+        var isMine = m.sender_id === currentUser.id;
+        var div = document.createElement('div');
+        div.className = 'msg ' + (isMine ? 'sent' : 'received');
+        div.innerHTML = '<div><div class="msg-bubble">' + formatMsgBody(m.body) + '</div><div class="msg-time">' + timeAgo(m.created_at) + '</div></div>';
+        container.appendChild(div);
+        if (m.id > lastMsgId) lastMsgId = m.id;
+      });
+      if (wasAtBottom) container.scrollTop = container.scrollHeight;
+      document.querySelectorAll('.conv-item.active').forEach(function(el) { el.classList.remove('active'); });
+      document.querySelectorAll('.conv-item').forEach(function(el) {
+        if (el.onclick && el.onclick.toString().indexOf(activeConv) !== -1) el.classList.add('active');
+      });
+    }
+
+    function formatMsgBody(body) {
+      if (body.indexOf('[VIDEO CALL]') === 0) {
+        var link = body.replace('[VIDEO CALL] ', '');
+        return '<div style="display:flex;align-items:center;gap:var(--sp-2)">&#128249; <a href="' + link + '" target="_blank" style="word-break:break-all">Join Video Call</a></div>';
+      }
+      if (body.indexOf('[PHONE CALL]') === 0) {
+        var num = body.replace('[PHONE CALL] ', '');
+        return '<div style="display:flex;align-items:center;gap:var(--sp-2)">&#128222; <a href="tel:' + num + '">Call ' + num + '</a></div>';
+      }
+      return escapeHtml(body);
+    }
+
+    async function sendMsg() {
+      var input = document.getElementById('msg-input');
+      var body = input.value.trim();
+      if (!body || !activeConv) return;
+      input.value = '';
+      try {
+        await fetch('/api/conversations/' + activeConv + '/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: body }) });
+        await loadMessages();
+      } catch (e) { showToast('Error sending', 'error'); }
+    }
+
+    function startVideoCall() {
+      var room = 'skillswap-' + activeConv + '-' + Date.now();
+      var link = 'https://meet.jit.si/' + room;
+      shareCallLink('[VIDEO CALL] ' + link, link);
+    }
+
+    function startPhoneCall() {
+      var num = prompt('Enter phone number:');
+      if (!num) return;
+      shareCallLink('[PHONE CALL] ' + num, null);
+    }
+
+    async function shareCallLink(body, displayLink) {
+      if (!activeConv) return;
+      try {
+        await fetch('/api/conversations/' + activeConv + '/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: body }) });
+        if (displayLink) window.open(displayLink, '_blank');
+        await loadMessages();
+      } catch (e) { showToast('Error', 'error'); }
+    }
   </script>
 </body>
 </html>

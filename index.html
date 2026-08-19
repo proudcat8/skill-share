@@ -2,16 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SkillShare - Learn & Teach the World</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a12">
+  <title>Skill Swap — Learn & Teach the World</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%235b7cf7'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
   <link rel="stylesheet" href="css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="landing-page" class="page active">
-    <nav class="landing-nav">
-      <div class="logo">Skill<span>Share</span></div>
+    <nav class="landing-nav" aria-label="Main navigation">
+      <div class="logo">Skill<span>Swap</span></div>
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#skills">Skills</a>
@@ -20,7 +26,6 @@
     </nav>
 
     <section class="hero">
-      <div class="hero-glow"></div>
       <div class="hero-content">
         <span class="badge">Connecting the world through skills</span>
         <h1>Learn anything from<br><span class="gradient-text">anyone in the world</span></h1>
@@ -33,22 +38,22 @@
       <h2 class="anim">Everything you need to <span class="highlight">share & learn</span></h2>
       <div class="features-grid stagger">
         <div class="feature-card">
-          <div class="feature-icon">👥</div>
+          <div class="feature-icon">&#128101;</div>
           <h3>Share Skills</h3>
           <p>Post what you can teach and discover what others want to share</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">📹</div>
+          <div class="feature-icon">&#128249;</div>
           <h3>Video Calls</h3>
           <p>Learn face-to-face with built-in HD video calls</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">📅</div>
+          <div class="feature-icon">&#128197;</div>
           <h3>Schedule Sessions</h3>
           <p>Book convenient times for one-on-one skill-sharing</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🌍</div>
+          <div class="feature-icon">&#127757;</div>
           <h3>Global Community</h3>
           <p>Connect with people from every corner of the world</p>
         </div>
@@ -65,27 +70,49 @@
       <div class="testimonials-grid stagger">
         <div class="testimonial-card">
           <p>"I taught someone from Tokyo how to make authentic pasta, and they taught me to use Instagram!"</p>
-          <div class="testimonial-author"><span class="flag">🇮🇹</span><div><strong>Maria R.</strong><br><small>Italy</small></div></div>
+          <div class="testimonial-author"><div><strong>Maria R.</strong><br><small>Italy</small></div></div>
         </div>
         <div class="testimonial-card">
           <p>"Connected with a grandmother in India who taught me Ayurvedic cooking. Incredible experience."</p>
-          <div class="testimonial-author"><span class="flag">🇺🇸</span><div><strong>James K.</strong><br><small>USA</small></div></div>
+          <div class="testimonial-author"><div><strong>James K.</strong><br><small>USA</small></div></div>
         </div>
         <div class="testimonial-card">
           <p>"Finally found someone to teach me watercolor painting. The video call feature is amazing."</p>
-          <div class="testimonial-author"><span class="flag">🇯🇵</span><div><strong>Yuki T.</strong><br><small>Japan</small></div></div>
+          <div class="testimonial-author"><div><strong>Yuki T.</strong><br><small>Japan</small></div></div>
         </div>
       </div>
     </section>
 
-    <footer><p>SkillShare &mdash; Built by Aditya</p></footer>
+    <section class="footer-team" style="max-width:480px;margin:0 auto var(--sp-10)">
+      <div class="footer-team-label">Built by</div>
+      <div class="footer-team-names">
+        <div class="footer-person">
+          <div class="footer-person-avatar">AJ</div>
+          <div class="footer-person-name">Aaradhy Jha</div>
+        </div>
+        <div class="footer-person">
+          <div class="footer-person-avatar">AS</div>
+          <div class="footer-person-name">Ayush Solanki</div>
+        </div>
+        <div class="footer-person">
+          <div class="footer-person-avatar">AD</div>
+          <div class="footer-person-name">Aaditya Das</div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site-footer-landing">
+      <p>Skill Swap &mdash; Built with care</p>
+    </footer>
   </div>
 
   <script src="js/constants.js"></script>
   <script src="js/utils.js"></script>
   <script>
-    const cloud = document.getElementById('skills-cloud');
-    SKILL_CATEGORIES.forEach(c => {
+    fetch('/api/auth/me').then(function(r){return r.json()}).then(function(u){ if(u) location.href='pages/feed.html'; });
+
+    var cloud = document.getElementById('skills-cloud');
+    SKILL_CATEGORIES.forEach(function(c) {
       cloud.innerHTML += '<span class="skill-pill">' + c.icon + ' ' + c.label + '</span>';
     });
     setTimeout(initScrollAnimations, 200);

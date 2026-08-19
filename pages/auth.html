@@ -2,31 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome - SkillShare</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a12">
+  <title>Sign In — Skill Swap</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%235b7cf7'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
   <link rel="stylesheet" href="../css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body class="auth-page">
   <div class="auth-box">
-    <div class="logo">Skill<span>Share</span></div>
-    <p class="subtitle">Enter a username to get started</p>
-    <form onsubmit="event.preventDefault(); go()">
+    <div class="logo">Skill<span>Swap</span></div>
+    <p class="subtitle" id="auth-subtitle">Welcome back! Sign in to continue</p>
+    <div class="error-msg" id="auth-error"></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="signin" onclick="switchTab('signin')">Sign In</button>
+      <button class="auth-tab" data-tab="signup" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+    <form onsubmit="handleAuth(event)">
       <div class="form-group">
-        <label>Username</label>
-        <input class="input" id="username" placeholder="e.g. Aditya" autofocus maxlength="20" required>
+        <label for="auth-username">Username</label>
+        <input type="text" class="input" id="auth-username" placeholder="e.g. aditya" maxlength="20" required>
       </div>
-      <button type="submit" class="btn btn-primary" style="width:100%">Enter</button>
+      <div class="form-group">
+        <label for="auth-password">Password</label>
+        <input type="password" class="input" id="auth-password" placeholder="At least 4 characters" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%" id="auth-submit">Sign In</button>
     </form>
   </div>
+
   <script>
-    if (localStorage.getItem('ss_username')) location.href = 'feed.html';
-    function go() {
-      const name = document.getElementById('username').value.trim();
-      if (!name) return;
-      localStorage.setItem('ss_username', name);
-      location.href = 'feed.html';
+    var isSignUp = false;
+    fetch('/api/auth/me').then(function(r){return r.json()}).then(function(u){ if(u) location.href='/pages/feed.html'; });
+
+    function switchTab(tab) {
+      isSignUp = tab === 'signup';
+      document.querySelectorAll('.auth-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
+      document.getElementById('auth-submit').textContent = isSignUp ? 'Create Account' : 'Sign In';
+      document.getElementById('auth-subtitle').textContent = isSignUp ? 'Join our community of learners' : 'Welcome back! Sign in to continue';
+      document.getElementById('auth-error').classList.remove('show');
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      var errEl = document.getElementById('auth-error');
+      errEl.classList.remove('show');
+      var username = document.getElementById('auth-username').value.trim();
+      var password = document.getElementById('auth-password').value;
+      if (!username || !password) { errEl.textContent = 'Fill in all fields'; errEl.classList.add('show'); return; }
+      try {
+        var url = isSignUp ? '/api/auth/signup' : '/api/auth/login';
+        var res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username, password: password }) });
+        var data = await res.json();
+        if (!res.ok) { errEl.textContent = data.error; errEl.classList.add('show'); return; }
+        location.href = '/pages/feed.html';
+      } catch (e) { errEl.textContent = 'Connection error'; errEl.classList.add('show'); }
     }
   </script>
 </body>

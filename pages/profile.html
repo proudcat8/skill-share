@@ -2,50 +2,182 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile - SkillShare</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a12">
+  <title>Profile — Skill Swap</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%235b7cf7'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
   <link rel="stylesheet" href="../css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="app"></div>
-
   <script src="../js/constants.js"></script>
   <script src="../js/utils.js"></script>
   <script src="../js/layout.js"></script>
   <script>
-    buildLayout();
+    initLayout().then(function() { loadProfile(); });
 
-    const user = getMockUser();
-    const teachTags = ['Web Development', 'Python', 'CSS Styling'].map((s,i) => `<span class="skill-tag teach" style="animation:popIn .4s ${.1+i*.08}s both">${s}</span>`).join('');
-    const learnTags = ['Pasta Making', 'Watercolor Painting', 'Guitar', 'Japanese'].map((s,i) => `<span class="skill-tag learn" style="animation:popIn .4s ${.3+i*.08}s both">${s}</span>`).join('');
+    async function loadProfile() {
+      var params = new URLSearchParams(window.location.search);
+      var userId = params.get('id') || currentUser.id;
+      var res = await fetch('/api/users/' + userId);
+      if (!res.ok) { document.getElementById('app-content').innerHTML = '<div class="empty-state"><p>User not found</p></div>'; return; }
+      var profile = await res.json();
+      var isOwn = profile.id === currentUser.id;
 
-    document.getElementById('app-content').innerHTML = `
-      <div class="profile-container">
-        <div class="profile-card anim">
-          <div class="profile-top">
-            <div class="profile-avatar" style="animation:bounceIn .6s ease">${getInitials(user.display_name)}</div>
-            <div>
-              <div class="profile-name">${user.display_name}</div>
-              <div class="profile-bio">Learning to build cool stuff!</div>
-              <div class="profile-actions">
-                <button class="btn btn-ghost btn-sm" onclick="showToast('Edit profile coming soon!','info')">Edit Profile</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="skills-box anim" style="animation-delay:.15s">
-          <h3 class="teach">🎓 Skills I Teach</h3>
-          <div class="skill-tags">${teachTags}</div>
-        </div>
-        <div class="skills-box anim" style="animation-delay:.25s">
-          <h3 class="learn">📚 Skills I Want to Learn</h3>
-          <div class="skill-tags">${learnTags}</div>
-        </div>
-        <h3 style="margin-bottom:16px" class="anim" style="animation-delay:.35s">Your Posts</h3>
-        <div class="empty-state anim" style="animation-delay:.4s"><p>Posts will appear here once the database is connected</p></div>
-      </div>`;
+      var teachTags = (profile.teach_skills || []).map(function(s) {
+        return '<span class="skill-tag teach">' + escapeHtml(s) + '</span>';
+      }).join('');
+      var learnTags = (profile.learn_skills || []).map(function(s) {
+        return '<span class="skill-tag learn">' + escapeHtml(s) + '</span>';
+      }).join('');
+
+      var posts = (profile.posts || []).map(function(p) {
+        var cat = getCategoryInfo(p.category);
+        var badge = p.type === 'teach' ? '<span class="post-badge teach">&#127891; Teaching</span>' : '<span class="post-badge learn">&#128218; Learning</span>';
+        var deleteBtn = p.author_id === currentUser.id
+          ? '<button class="post-action" style="margin-left:auto" onclick="deletePost(' + p.id + ',this)" aria-label="Delete post"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'
+          : '';
+        return '<div class="post-card anim visible">' +
+          '<div class="post-header">' +
+            '<div class="avatar">' + getInitials(p.author_name) + '</div>' +
+            '<div style="flex:1;min-width:0"><div class="post-author">' + escapeHtml(p.author_name) + '</div><div class="post-time">' + timeAgo(p.created_at) + '</div></div>' +
+            badge +
+          '</div>' +
+          '<div class="post-body">' + escapeHtml(p.body) + '</div>' +
+          '<div class="post-skill-tag">' + cat.icon + ' ' + escapeHtml(p.skill_tag) + '</div>' +
+          '<div class="post-actions">' +
+            '<button class="post-action' + (p.liked ? ' liked' : '') + '">' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
+              '<span>' + p.like_count + '</span>' +
+            '</button>' +
+            '<button class="post-action">' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+              '<span>' + p.comments_count + '</span>' +
+            '</button>' +
+            deleteBtn +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      var actions = isOwn
+        ? '<button class="btn btn-ghost btn-sm" onclick="showEditModal()">Edit Profile</button>'
+        : '<button class="btn btn-primary btn-sm" onclick="messageUser(' + profile.id + ')">Message</button><button class="btn btn-ghost btn-sm" onclick="scheduleUser(' + profile.id + ',\'' + escapeHtml(profile.username) + '\')">Schedule</button>';
+
+      document.getElementById('app-content').innerHTML =
+        '<div class="profile-container">' +
+          '<div class="profile-card anim visible">' +
+            '<div class="profile-top">' +
+              '<div class="profile-avatar">' + getInitials(profile.username) + '</div>' +
+              '<div>' +
+                '<div class="profile-name">' + escapeHtml(profile.username) + '</div>' +
+                '<div class="profile-bio">' + escapeHtml(profile.bio || 'No bio yet') + '</div>' +
+                '<div class="profile-actions">' + actions + '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="skills-box anim visible">' +
+            '<h3 class="teach">&#127891; Skills I Teach</h3>' +
+            '<div class="skill-tags">' + (teachTags || '<span style="color:var(--text-tertiary);font-size:13px">None yet</span>') + '</div>' +
+          '</div>' +
+          '<div class="skills-box anim visible">' +
+            '<h3 class="learn">&#128218; Skills I Want to Learn</h3>' +
+            '<div class="skill-tags">' + (learnTags || '<span style="color:var(--text-tertiary);font-size:13px">None yet</span>') + '</div>' +
+          '</div>' +
+          '<h3 style="margin-bottom:var(--sp-4)">Posts</h3>' +
+          (posts || '<div class="empty-state anim visible"><p>No posts yet</p></div>') +
+        '</div>';
+
+      initScrollAnimations();
+    }
+
+    function showEditModal() {
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay open';
+      overlay.innerHTML =
+        '<div class="modal">' +
+          '<div class="modal-header"><h2>Edit Profile</h2><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
+          '<form onsubmit="saveProfile(event)">' +
+            '<div class="form-group"><label>Bio</label><textarea class="textarea" id="edit-bio" rows="3" placeholder="Tell people about yourself">' + (currentUser.bio || '') + '</textarea></div>' +
+            '<div class="form-group"><label>Skills I Teach (comma separated)</label><input class="input" id="edit-teach" value="' + (currentUser.teach_skills || []).join(', ') + '" placeholder="e.g. Web Development, Python"></div>' +
+            '<div class="form-group"><label>Skills I Want to Learn (comma separated)</label><input class="input" id="edit-learn" value="' + (currentUser.learn_skills || []).join(', ') + '" placeholder="e.g. Pasta Making, Guitar"></div>' +
+            '<button type="submit" class="btn btn-primary" style="width:100%">Save Changes</button>' +
+          '</form>' +
+        '</div>';
+      document.body.appendChild(overlay);
+    }
+
+    async function saveProfile(e) {
+      e.preventDefault();
+      var bio = document.getElementById('edit-bio').value.trim();
+      var teach_skills = document.getElementById('edit-teach').value.split(',').map(function(s){return s.trim()}).filter(Boolean);
+      var learn_skills = document.getElementById('edit-learn').value.split(',').map(function(s){return s.trim()}).filter(Boolean);
+      try {
+        await fetch('/api/users/' + currentUser.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bio: bio, teach_skills: teach_skills, learn_skills: learn_skills }) });
+        document.querySelector('.modal-overlay').remove();
+        showToast('Profile updated!', 'success');
+        loadProfile();
+      } catch (e) { showToast('Error saving', 'error'); }
+    }
+
+    async function deletePost(postId, btn) {
+      if (!confirm('Delete this post?')) return;
+      try {
+        await fetch('/api/posts/' + postId, { method: 'DELETE' });
+        var card = btn.closest('.post-card');
+        card.style.transition = 'opacity 0.2s, transform 0.2s';
+        card.style.transform = 'translateY(-8px)';
+        card.style.opacity = '0';
+        setTimeout(function() { card.remove(); }, 200);
+        showToast('Post deleted', 'success');
+      } catch (e) { showToast('Error deleting', 'error'); }
+    }
+
+    async function messageUser(userId) {
+      try {
+        await fetch('/api/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+        location.href = 'messages.html';
+      } catch (e) { showToast('Error', 'error'); }
+    }
+
+    function scheduleUser(userId, username) {
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay open';
+      overlay.innerHTML =
+        '<div class="modal">' +
+          '<div class="modal-header"><h2>Schedule with ' + escapeHtml(username) + '</h2><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
+          '<form onsubmit="submitSchedule(event,' + userId + ')">' +
+            '<div class="form-group"><label>Skill</label><input class="input" id="sched-skill" placeholder="e.g. Pasta Making" required></div>' +
+            '<div class="form-group"><label>Description (optional)</label><textarea class="textarea" id="sched-desc" rows="2" placeholder="What you\'ll cover..."></textarea></div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)">' +
+              '<div class="form-group"><label>Date & Time</label><input class="input" id="sched-date" type="datetime-local" required></div>' +
+              '<div class="form-group"><label>Duration (min)</label><input class="input" id="sched-dur" type="number" value="60" min="15" max="480"></div>' +
+            '</div>' +
+            '<button type="submit" class="btn btn-primary" style="width:100%">Create Session</button>' +
+          '</form>' +
+        '</div>';
+      document.body.appendChild(overlay);
+    }
+
+    async function submitSchedule(e, userId) {
+      e.preventDefault();
+      var skill_tag = document.getElementById('sched-skill').value.trim();
+      var description = document.getElementById('sched-desc').value.trim();
+      var scheduled_at = document.getElementById('sched-date').value;
+      var duration = parseInt(document.getElementById('sched-dur').value);
+      if (!skill_tag || !scheduled_at) { showToast('Fill in all fields', 'error'); return; }
+      try {
+        var res = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participant_id: userId, skill_tag: skill_tag, description: description, scheduled_at: scheduled_at, duration: duration }) });
+        if (!res.ok) { var d = await res.json(); showToast(d.error, 'error'); return; }
+        document.querySelector('.modal-overlay').remove();
+        showToast('Session created!', 'success');
+      } catch (e) { showToast('Error', 'error'); }
+    }
   </script>
 </body>
 </html>

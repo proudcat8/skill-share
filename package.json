@@ -1,0 +1,28 @@
+{
+  "name": "skillshare",
+  "version": "1.0.0",
+  "description": "Learn and teach skills from people around the world.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/proudcat8/skill-share.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/proudcat8/skill-share/issues"
+  },
+  "homepage": "https://github.com/proudcat8/skill-share#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "sql.js": "^1.14.2"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
+  }
+}

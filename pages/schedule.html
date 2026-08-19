@@ -2,87 +2,191 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Schedule - SkillShare</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366f1'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a12">
+  <title>Schedule — Skill Swap</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%235b7cf7'/><text x='50' y='68' font-size='45' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>S</text></svg>">
   <link rel="stylesheet" href="../css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="app"></div>
-
   <script src="../js/constants.js"></script>
   <script src="../js/utils.js"></script>
   <script src="../js/layout.js"></script>
   <script>
-    buildLayout();
+    var calMonth = new Date().getMonth(), calYear = new Date().getFullYear(), selectedDate = null;
+    var allSessions = [];
 
-    let calMonth = new Date().getMonth(), calYear = new Date().getFullYear(), selectedDate = null;
-
-    const MOCK_SESSIONS = [
-      { skill:'Pasta Making', other:'Maria Rossi', isOrg:false, status:'accepted', date:new Date(Date.now()+86400000*2), duration:60 },
-      { skill:'Web Development', other:'James Kim', isOrg:true, status:'pending', date:new Date(Date.now()+86400000*5), duration:90 },
-    ];
-
-    renderSchedule();
-    renderCalendar();
+    initLayout().then(function() {
+      renderSchedule();
+      loadSessions();
+    });
 
     function renderSchedule() {
-      document.getElementById('app-content').innerHTML = `
-        <div class="schedule-container">
-          <div style="display:grid;grid-template-columns:1fr 340px;gap:24px">
-            <div class="calendar-card anim">
-              <div class="cal-header"><h3 id="cal-title"></h3><div class="cal-nav"><button onclick="changeMonth(-1)">&lsaquo;</button><button onclick="changeMonth(1)">&rsaquo;</button></div></div>
-              <div class="cal-grid" id="cal-grid"></div>
-            </div>
-            <div class="sessions-list anim-right" style="animation-delay:.15s">
-              <h3 id="sessions-title">Upcoming Sessions</h3>
-              <div id="sessions-list"></div>
-            </div>
-          </div>
-        </div>`;
+      document.getElementById('app-content').innerHTML =
+        '<div class="schedule-container">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-5)" class="anim visible">' +
+            '<h2>Your Sessions</h2>' +
+            '<button class="btn btn-primary btn-sm" onclick="showNewSession()">+ New Session</button>' +
+          '</div>' +
+          '<div class="schedule-grid-layout" style="display:grid;grid-template-columns:1fr 320px;gap:var(--sp-6)">' +
+            '<div class="calendar-card anim visible">' +
+              '<div class="cal-header"><h3 id="cal-title"></h3><div class="cal-nav"><button onclick="changeMonth(-1)">&lsaquo;</button><button onclick="changeMonth(1)">&rsaquo;</button></div></div>' +
+              '<div class="cal-grid" id="cal-grid"></div>' +
+            '</div>' +
+            '<div class="sessions-list anim visible">' +
+              '<h3 id="sessions-title">Upcoming Sessions</h3>' +
+              '<div id="sessions-list"></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      renderCalendar();
+      renderSessionList();
+    }
+
+    async function loadSessions() {
+      var res = await fetch('/api/sessions');
+      allSessions = await res.json();
       renderCalendar();
       renderSessionList();
     }
 
     function renderCalendar() {
-      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-      const titleEl = document.getElementById('cal-title');
+      var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      var titleEl = document.getElementById('cal-title');
       if (titleEl) titleEl.textContent = months[calMonth] + ' ' + calYear;
-      const first = new Date(calYear, calMonth, 1), last = new Date(calYear, calMonth + 1, 0), today = new Date();
-      let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-day-label">${d}</div>`).join('');
-      for (let i = 0; i < first.getDay(); i++) html += '<div></div>';
-      for (let d = 1; d <= last.getDate(); d++) {
-        const date = new Date(calYear, calMonth, d);
-        const isToday = date.toDateString() === today.toDateString();
-        const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
-        let cls = 'cal-day'; if (isToday) cls += ' today'; if (isSelected) cls += ' selected';
-        html += `<div class="${cls}" onclick="selectDay(${calYear},${calMonth},${d})" style="animation:popIn .3s ${d*.01}s both">${d}</div>`;
+      var first = new Date(calYear, calMonth, 1), last = new Date(calYear, calMonth + 1, 0), today = new Date();
+      var html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d) { return '<div class="cal-day-label">' + d + '</div>'; }).join('');
+      for (var i = 0; i < first.getDay(); i++) html += '<div></div>';
+      for (var d = 1; d <= last.getDate(); d++) {
+        var date = new Date(calYear, calMonth, d);
+        var isToday = date.toDateString() === today.toDateString();
+        var isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+        var dateStr = date.toISOString().split('T')[0];
+        var hasSessions = allSessions.some(function(s) { return s.scheduled_at && s.scheduled_at.indexOf(dateStr) === 0; });
+        var cls = 'cal-day';
+        if (isToday) cls += ' today';
+        if (isSelected) cls += ' selected';
+        if (hasSessions) cls += ' dots';
+        html += '<div class="' + cls + '" onclick="selectDay(' + calYear + ',' + calMonth + ',' + d + ')">' + d + '</div>';
       }
-      const grid = document.getElementById('cal-grid');
+      var grid = document.getElementById('cal-grid');
       if (grid) grid.innerHTML = html;
     }
 
-    function changeMonth(dir) { calMonth += dir; if (calMonth > 11) { calMonth = 0; calYear++; } if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
-    function selectDay(y, m, d) { selectedDate = new Date(y, m, d); renderCalendar(); renderSessionList(); }
+    function changeMonth(dir) {
+      calMonth += dir;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    }
+
+    function selectDay(y, m, d) {
+      selectedDate = new Date(y, m, d);
+      renderCalendar();
+      renderSessionList();
+    }
 
     function renderSessionList() {
-      const el = document.getElementById('sessions-list');
+      var el = document.getElementById('sessions-list');
       if (!el) return;
-      const title = document.getElementById('sessions-title');
-      title.textContent = selectedDate ? 'Sessions on ' + selectedDate.toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'Upcoming Sessions';
-      el.innerHTML = MOCK_SESSIONS.map((s, i) => `
-        <div class="session-card" style="animation:fadeInRight .4s ${i*.1}s both">
-          <span class="session-status ${s.status}">${s.status}</span>
-          <div style="font-size:12px;color:var(--muted)">${s.isOrg ? 'Teaching ' + s.other : s.other + ' is teaching'}</div>
-          <div class="session-skill">${s.skill}</div>
-          <div class="session-meta">🕐 ${formatSessionDate(s.date)} · ${s.duration}m</div>
-          <div class="session-actions">
-            ${s.status === 'accepted' ? `<button class="btn btn-primary btn-sm" onclick="location.href='call.html?session=mock'">📹 Join Call</button>` : ''}
-            ${s.status === 'pending' && !s.isOrg ? `<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="showToast('Database not connected','info')">Accept</button>` : ''}
-          </div>
-        </div>
-      `).join('') || '<p style="text-align:center;color:var(--muted);font-size:13px;padding:20px">No sessions</p>';
+      var title = document.getElementById('sessions-title');
+      var filtered = allSessions;
+      if (selectedDate) {
+        var ds = selectedDate.toISOString().split('T')[0];
+        filtered = allSessions.filter(function(s) { return s.scheduled_at && s.scheduled_at.indexOf(ds) === 0; });
+        title.textContent = 'Sessions on ' + selectedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      } else {
+        title.textContent = 'All Sessions';
+      }
+      if (!filtered.length) { el.innerHTML = '<p style="text-align:center;color:var(--text-tertiary);font-size:13px;padding:var(--sp-5)">No sessions</p>'; return; }
+      el.innerHTML = filtered.map(function(s) {
+        var isOrg = s.organizer_id === currentUser.id;
+        var other = isOrg ? s.participant_name : s.organizer_name;
+        var statusCls = { pending: 'pending', accepted: 'accepted', declined: 'declined', cancelled: 'cancelled' };
+
+        var actions = '';
+        if (s.status === 'accepted') actions += '<button class="btn btn-primary btn-sm" onclick="joinCall(' + s.id + ')">&#128249; Join Call</button>';
+        if (s.status === 'pending' && !isOrg) {
+          actions += '<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="respondSession(' + s.id + ',\'accepted\')">Accept</button>';
+          actions += '<button class="btn btn-sm btn-danger" onclick="respondSession(' + s.id + ',\'declined\')">Decline</button>';
+        }
+        if (s.status !== 'cancelled' && s.status !== 'declined') actions += '<button class="btn btn-ghost btn-sm" onclick="cancelSession(' + s.id + ')">Cancel</button>';
+
+        return '<div class="session-card">' +
+          '<span class="session-status ' + (statusCls[s.status] || 'pending') + '">' + s.status + '</span>' +
+          '<div style="font-size:12px;color:var(--text-tertiary)">' + (isOrg ? 'Teaching ' + escapeHtml(other) : escapeHtml(other) + ' is teaching') + '</div>' +
+          '<div class="session-skill">' + escapeHtml(s.skill_tag) + '</div>' +
+          (s.description ? '<div style="font-size:12px;color:var(--text-tertiary);margin:var(--sp-1) 0">' + escapeHtml(s.description) + '</div>' : '') +
+          '<div class="session-meta">&#128336; ' + formatSessionDate(s.scheduled_at) + ' &middot; ' + s.duration + 'm</div>' +
+          '<div class="session-actions">' + actions + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    async function respondSession(id, status) {
+      await fetch('/api/sessions/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: status }) });
+      loadSessions();
+      showToast(status === 'accepted' ? 'Session accepted!' : 'Session declined', status === 'accepted' ? 'success' : 'info');
+    }
+
+    async function cancelSession(id) {
+      if (!confirm('Cancel this session?')) return;
+      await fetch('/api/sessions/' + id, { method: 'DELETE' });
+      loadSessions();
+      showToast('Session cancelled', 'info');
+    }
+
+    function joinCall(id) {
+      var room = 'skillswap-session-' + id;
+      window.open('call.html?room=' + room, '_blank');
+    }
+
+    function showNewSession() {
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay open';
+      overlay.innerHTML =
+        '<div class="modal">' +
+          '<div class="modal-header"><h2>Schedule Session</h2><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
+          '<form onsubmit="createSession(event)">' +
+            '<div class="form-group"><label>Participant (username)</label><input class="input" id="session-participant" placeholder="e.g. maria" required></div>' +
+            '<div class="form-group"><label>Skill</label><input class="input" id="session-skill" placeholder="e.g. Pasta Making" required></div>' +
+            '<div class="form-group"><label>Description (optional)</label><textarea class="textarea" id="session-desc" rows="2" placeholder="What you\'ll cover..."></textarea></div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)">' +
+              '<div class="form-group"><label>Date & Time</label><input class="input" id="session-date" type="datetime-local" required></div>' +
+              '<div class="form-group"><label>Duration (minutes)</label><input class="input" id="session-duration" type="number" value="60" min="15" max="480"></div>' +
+            '</div>' +
+            '<button type="submit" class="btn btn-primary" style="width:100%">Create Session</button>' +
+          '</form>' +
+        '</div>';
+      document.body.appendChild(overlay);
+    }
+
+    async function createSession(e) {
+      e.preventDefault();
+      var participant = document.getElementById('session-participant').value.trim();
+      var skill_tag = document.getElementById('session-skill').value.trim();
+      var description = document.getElementById('session-desc').value.trim();
+      var scheduled_at = document.getElementById('session-date').value;
+      var duration = parseInt(document.getElementById('session-duration').value);
+      if (!participant || !skill_tag || !scheduled_at) { showToast('Fill in all required fields', 'error'); return; }
+      var ures = await fetch('/api/users?q=' + encodeURIComponent(participant));
+      var users = await ures.json();
+      var user = users.find(function(u) { return u.username.toLowerCase() === participant.toLowerCase(); });
+      if (!user) { showToast('User not found', 'error'); return; }
+      try {
+        var res = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participant_id: user.id, skill_tag: skill_tag, description: description, scheduled_at: scheduled_at, duration: duration }) });
+        if (!res.ok) { var d = await res.json(); showToast(d.error, 'error'); return; }
+        document.querySelector('.modal-overlay').remove();
+        showToast('Session created! Waiting for acceptance.', 'success');
+        loadSessions();
+      } catch (e) { showToast('Error creating session', 'error'); }
     }
   </script>
 </body>
