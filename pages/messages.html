@@ -16,6 +16,7 @@
 </head>
 <body>
   <div id="app"></div>
+  <script src="../js/client-api.js"></script>
   <script src="../js/constants.js"></script>
   <script src="../js/utils.js"></script>
   <script src="../js/layout.js"></script>
@@ -67,47 +68,53 @@
       if (el.style.display === 'block') document.getElementById('user-search').focus();
     }
 
-    async function searchUsers() {
+    function searchUsers() {
       var q = document.getElementById('user-search').value.trim();
       var resEl = document.getElementById('user-results');
       if (!q) { resEl.innerHTML = ''; return; }
-      var res = await fetch('/api/users?q=' + encodeURIComponent(q));
-      var users = await res.json();
-      if (!users.length) { resEl.innerHTML = '<p style="font-size:12px;color:var(--text-tertiary);padding:var(--sp-2)">No users found</p>'; return; }
-      resEl.innerHTML = users.map(function(u) {
-        return '<div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2);cursor:pointer;border-radius:var(--radius-sm);transition:background 0.15s" onmouseover="this.style.background=\'var(--bg-raised)\'" onmouseout="this.style.background=\'\'" onclick="openChat(' + u.id + ',\'' + escapeHtml(u.username) + '\')">' +
-          '<div class="avatar" style="width:30px;height:30px;font-size:11px">' + getInitials(u.username) + '</div>' +
-          '<span style="font-size:13px">' + escapeHtml(u.username) + '</span>' +
-        '</div>';
-      }).join('');
+      API.searchUsers(q, function(err, users) {
+        if (!users.length) { resEl.innerHTML = '<p style="font-size:12px;color:var(--text-tertiary);padding:var(--sp-2)">No users found</p>'; return; }
+        resEl.innerHTML = users.map(function(u) {
+          return '<div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2);cursor:pointer;border-radius:var(--radius-sm);transition:background 0.15s" onmouseover="this.style.background=\'var(--bg-raised)\'" onmouseout="this.style.background=\'\'" onclick="openChat(' + u.id + ',\'' + escapeHtml(u.username) + '\')">' +
+            '<div class="avatar" style="width:30px;height:30px;font-size:11px">' + getInitials(u.username) + '</div>' +
+            '<span style="font-size:13px">' + escapeHtml(u.username) + '</span>' +
+          '</div>';
+        }).join('');
+      });
     }
 
-    async function loadConversations() {
-      var res = await fetch('/api/conversations');
-      var convs = await res.json();
-      var el = document.getElementById('conv-items');
-      if (!convs.length) { el.innerHTML = '<p style="text-align:center;color:var(--text-tertiary);font-size:13px;padding:var(--sp-8)">No conversations yet</p>'; return; }
-      el.innerHTML = convs.map(function(c) {
-        return '<div class="conv-item ' + (activeConv === c.id ? 'active' : '') + '" onclick="openChat(' + c.other_id + ',\'' + escapeHtml(c.other_name) + '\',' + c.id + ')">' +
-          '<div class="avatar">' + getInitials(c.other_name) + '</div>' +
-          '<div style="flex:1;min-width:0">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center">' +
-              '<span class="conv-name">' + escapeHtml(c.other_name) + '</span>' +
-              '<span class="conv-time">' + (c.last_message_at ? timeAgo(c.last_message_at) : '') + '</span>' +
+    function loadConversations() {
+      API.getConversations(function(err, convs) {
+        var el = document.getElementById('conv-items');
+        if (!convs.length) { el.innerHTML = '<p style="text-align:center;color:var(--text-tertiary);font-size:13px;padding:var(--sp-8)">No conversations yet</p>'; return; }
+        el.innerHTML = convs.map(function(c) {
+          return '<div class="conv-item ' + (activeConv === c.id ? 'active' : '') + '" onclick="openChat(' + c.other_id + ',\'' + escapeHtml(c.other_name) + '\',' + c.id + ')">' +
+            '<div class="avatar">' + getInitials(c.other_name) + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center">' +
+                '<span class="conv-name">' + escapeHtml(c.other_name) + '</span>' +
+                '<span class="conv-time">' + (c.last_message_at ? timeAgo(c.last_message_at) : '') + '</span>' +
+              '</div>' +
+              '<span class="conv-last">' + (c.last_message ? escapeHtml(c.last_message) : 'Start chatting...') + '</span>' +
             '</div>' +
-            '<span class="conv-last">' + (c.last_message ? escapeHtml(c.last_message) : 'Start chatting...') + '</span>' +
-          '</div>' +
-          (c.unread > 0 ? '<span class="conv-unread">' + c.unread + '</span>' : '') +
-        '</div>';
-      }).join('');
+            (c.unread > 0 ? '<span class="conv-unread">' + c.unread + '</span>' : '') +
+          '</div>';
+        }).join('');
+      });
     }
 
-    async function openChat(userId, username, convId) {
+    function openChat(userId, username, convId) {
       if (!convId) {
-        var res = await fetch('/api/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
-        var data = await res.json();
-        convId = data.id;
+        API.createConversation(userId, function(err, data) {
+          convId = data.id;
+          continueOpenChat(userId, username, convId);
+        });
+      } else {
+        continueOpenChat(userId, username, convId);
       }
+    }
+
+    function continueOpenChat(userId, username, convId) {
       activeConv = convId;
       lastMsgId = 0;
       document.getElementById('new-chat-search').style.display = 'none';
@@ -134,32 +141,32 @@
 
       if (isMobile()) showChatPanel();
 
-      await loadMessages();
+      loadMessages();
       loadConversations();
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = setInterval(loadMessages, 2000);
     }
 
-    async function loadMessages() {
+    function loadMessages() {
       if (!activeConv) return;
-      var res = await fetch('/api/conversations/' + activeConv + '/messages' + (lastMsgId ? '?after=' + lastMsgId : ''));
-      var msgs = await res.json();
-      if (!msgs.length) return;
-      var container = document.getElementById('chat-messages');
-      if (!container) return;
-      var wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
-      msgs.forEach(function(m) {
-        var isMine = m.sender_id === currentUser.id;
-        var div = document.createElement('div');
-        div.className = 'msg ' + (isMine ? 'sent' : 'received');
-        div.innerHTML = '<div><div class="msg-bubble">' + formatMsgBody(m.body) + '</div><div class="msg-time">' + timeAgo(m.created_at) + '</div></div>';
-        container.appendChild(div);
-        if (m.id > lastMsgId) lastMsgId = m.id;
-      });
-      if (wasAtBottom) container.scrollTop = container.scrollHeight;
-      document.querySelectorAll('.conv-item.active').forEach(function(el) { el.classList.remove('active'); });
-      document.querySelectorAll('.conv-item').forEach(function(el) {
-        if (el.onclick && el.onclick.toString().indexOf(activeConv) !== -1) el.classList.add('active');
+      API.getMessages(activeConv, lastMsgId, function(err, msgs) {
+        if (!msgs.length) return;
+        var container = document.getElementById('chat-messages');
+        if (!container) return;
+        var wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+        msgs.forEach(function(m) {
+          var isMine = m.sender_id === currentUser.id;
+          var div = document.createElement('div');
+          div.className = 'msg ' + (isMine ? 'sent' : 'received');
+          div.innerHTML = '<div><div class="msg-bubble">' + formatMsgBody(m.body) + '</div><div class="msg-time">' + timeAgo(m.created_at) + '</div></div>';
+          container.appendChild(div);
+          if (m.id > lastMsgId) lastMsgId = m.id;
+        });
+        if (wasAtBottom) container.scrollTop = container.scrollHeight;
+        document.querySelectorAll('.conv-item.active').forEach(function(el) { el.classList.remove('active'); });
+        document.querySelectorAll('.conv-item').forEach(function(el) {
+          if (el.onclick && el.onclick.toString().indexOf(activeConv) !== -1) el.classList.add('active');
+        });
       });
     }
 
@@ -175,15 +182,15 @@
       return escapeHtml(body);
     }
 
-    async function sendMsg() {
+    function sendMsg() {
       var input = document.getElementById('msg-input');
       var body = input.value.trim();
       if (!body || !activeConv) return;
       input.value = '';
-      try {
-        await fetch('/api/conversations/' + activeConv + '/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: body }) });
-        await loadMessages();
-      } catch (e) { showToast('Error sending', 'error'); }
+      API.sendMessage(activeConv, body, function(err) {
+        if (err) { showToast('Error sending', 'error'); return; }
+        loadMessages();
+      });
     }
 
     function startVideoCall() {
@@ -198,13 +205,13 @@
       shareCallLink('[PHONE CALL] ' + num, null);
     }
 
-    async function shareCallLink(body, displayLink) {
+    function shareCallLink(body, displayLink) {
       if (!activeConv) return;
-      try {
-        await fetch('/api/conversations/' + activeConv + '/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: body }) });
+      API.sendMessage(activeConv, body, function(err) {
+        if (err) { showToast('Error', 'error'); return; }
         if (displayLink) window.open(displayLink, '_blank');
-        await loadMessages();
-      } catch (e) { showToast('Error', 'error'); }
+        loadMessages();
+      });
     }
   </script>
 </body>

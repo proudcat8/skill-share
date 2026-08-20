@@ -16,6 +16,7 @@
 </head>
 <body>
   <div id="app"></div>
+  <script src="../js/client-api.js"></script>
   <script src="../js/constants.js"></script>
   <script src="../js/utils.js"></script>
   <script src="../js/layout.js"></script>
@@ -50,11 +51,13 @@
       renderSessionList();
     }
 
-    async function loadSessions() {
-      var res = await fetch('/api/sessions');
-      allSessions = await res.json();
-      renderCalendar();
-      renderSessionList();
+    function loadSessions() {
+      API.getSessions(function(err, sessions) {
+        if (err) return;
+        allSessions = sessions;
+        renderCalendar();
+        renderSessionList();
+      });
     }
 
     function renderCalendar() {
@@ -130,17 +133,21 @@
       }).join('');
     }
 
-    async function respondSession(id, status) {
-      await fetch('/api/sessions/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: status }) });
-      loadSessions();
-      showToast(status === 'accepted' ? 'Session accepted!' : 'Session declined', status === 'accepted' ? 'success' : 'info');
+    function respondSession(id, status) {
+      API.updateSession(id, status, function(err) {
+        if (err) return;
+        loadSessions();
+        showToast(status === 'accepted' ? 'Session accepted!' : 'Session declined', status === 'accepted' ? 'success' : 'info');
+      });
     }
 
-    async function cancelSession(id) {
+    function cancelSession(id) {
       if (!confirm('Cancel this session?')) return;
-      await fetch('/api/sessions/' + id, { method: 'DELETE' });
-      loadSessions();
-      showToast('Session cancelled', 'info');
+      API.deleteSession(id, function(err) {
+        if (err) return;
+        loadSessions();
+        showToast('Session cancelled', 'info');
+      });
     }
 
     function joinCall(id) {
@@ -168,7 +175,7 @@
       document.body.appendChild(overlay);
     }
 
-    async function createSession(e) {
+    function createSession(e) {
       e.preventDefault();
       var participant = document.getElementById('session-participant').value.trim();
       var skill_tag = document.getElementById('session-skill').value.trim();
@@ -176,17 +183,17 @@
       var scheduled_at = document.getElementById('session-date').value;
       var duration = parseInt(document.getElementById('session-duration').value);
       if (!participant || !skill_tag || !scheduled_at) { showToast('Fill in all required fields', 'error'); return; }
-      var ures = await fetch('/api/users?q=' + encodeURIComponent(participant));
-      var users = await ures.json();
-      var user = users.find(function(u) { return u.username.toLowerCase() === participant.toLowerCase(); });
-      if (!user) { showToast('User not found', 'error'); return; }
-      try {
-        var res = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participant_id: user.id, skill_tag: skill_tag, description: description, scheduled_at: scheduled_at, duration: duration }) });
-        if (!res.ok) { var d = await res.json(); showToast(d.error, 'error'); return; }
-        document.querySelector('.modal-overlay').remove();
-        showToast('Session created! Waiting for acceptance.', 'success');
-        loadSessions();
-      } catch (e) { showToast('Error creating session', 'error'); }
+      API.searchUsers(participant, function(err, users) {
+        if (err) { showToast('User not found', 'error'); return; }
+        var user = users.find(function(u) { return u.username.toLowerCase() === participant.toLowerCase(); });
+        if (!user) { showToast('User not found', 'error'); return; }
+        API.createSession(user.id, skill_tag, description, scheduled_at, duration, function(err, result) {
+          if (err) { showToast(err.error || 'Error creating session', 'error'); return; }
+          document.querySelector('.modal-overlay').remove();
+          showToast('Session created! Waiting for acceptance.', 'success');
+          loadSessions();
+        });
+      });
     }
   </script>
 </body>

@@ -65,23 +65,7 @@
       <div class="skills-cloud stagger" id="skills-cloud"></div>
     </section>
 
-    <section class="testimonials">
-      <h2 class="anim">Loved by people <span class="highlight">worldwide</span></h2>
-      <div class="testimonials-grid stagger">
-        <div class="testimonial-card">
-          <p>"I taught someone from Tokyo how to make authentic pasta, and they taught me to use Instagram!"</p>
-          <div class="testimonial-author"><div><strong>Maria R.</strong><br><small>Italy</small></div></div>
-        </div>
-        <div class="testimonial-card">
-          <p>"Connected with a grandmother in India who taught me Ayurvedic cooking. Incredible experience."</p>
-          <div class="testimonial-author"><div><strong>James K.</strong><br><small>USA</small></div></div>
-        </div>
-        <div class="testimonial-card">
-          <p>"Finally found someone to teach me watercolor painting. The video call feature is amazing."</p>
-          <div class="testimonial-author"><div><strong>Yuki T.</strong><br><small>Japan</small></div></div>
-        </div>
-      </div>
-    </section>
+   
 
     <section class="footer-team" style="max-width:480px;margin:0 auto var(--sp-10)">
       <div class="footer-team-label">Built by</div>
@@ -106,10 +90,11 @@
     </footer>
   </div>
 
+  <script src="js/client-api.js"></script>
   <script src="js/constants.js"></script>
   <script src="js/utils.js"></script>
   <script>
-    fetch('/api/auth/me').then(function(r){return r.json()}).then(function(u){ if(u) location.href='pages/feed.html'; });
+    API.me(function(err, u) { if (u) location.href = 'pages/feed.html'; });
 
     var cloud = document.getElementById('skills-cloud');
     SKILL_CATEGORIES.forEach(function(c) {

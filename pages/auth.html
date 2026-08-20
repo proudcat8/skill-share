@@ -36,9 +36,10 @@
     </form>
   </div>
 
+  <script src="../js/client-api.js"></script>
   <script>
     var isSignUp = false;
-    fetch('/api/auth/me').then(function(r){return r.json()}).then(function(u){ if(u) location.href='/pages/feed.html'; });
+    API.me(function(err, u) { if (u) location.href = 'feed.html'; });
 
     function switchTab(tab) {
       isSignUp = tab === 'signup';
@@ -48,20 +49,22 @@
       document.getElementById('auth-error').classList.remove('show');
     }
 
-    async function handleAuth(e) {
+    function handleAuth(e) {
       e.preventDefault();
       var errEl = document.getElementById('auth-error');
       errEl.classList.remove('show');
       var username = document.getElementById('auth-username').value.trim();
       var password = document.getElementById('auth-password').value;
       if (!username || !password) { errEl.textContent = 'Fill in all fields'; errEl.classList.add('show'); return; }
-      try {
-        var url = isSignUp ? '/api/auth/signup' : '/api/auth/login';
-        var res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username, password: password }) });
-        var data = await res.json();
-        if (!res.ok) { errEl.textContent = data.error; errEl.classList.add('show'); return; }
-        location.href = '/pages/feed.html';
-      } catch (e) { errEl.textContent = 'Connection error'; errEl.classList.add('show'); }
+      var cb = function(err, data) {
+        if (err) { errEl.textContent = err.error || err.message || 'Error'; errEl.classList.add('show'); return; }
+        location.href = 'feed.html';
+      };
+      if (isSignUp) {
+        API.signup(username, password, cb);
+      } else {
+        API.login(username, password, cb);
+      }
     }
   </script>
 </body>

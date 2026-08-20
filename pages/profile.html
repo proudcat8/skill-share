@@ -16,84 +16,85 @@
 </head>
 <body>
   <div id="app"></div>
+  <script src="../js/client-api.js"></script>
   <script src="../js/constants.js"></script>
   <script src="../js/utils.js"></script>
   <script src="../js/layout.js"></script>
   <script>
     initLayout().then(function() { loadProfile(); });
 
-    async function loadProfile() {
+    function loadProfile() {
       var params = new URLSearchParams(window.location.search);
       var userId = params.get('id') || currentUser.id;
-      var res = await fetch('/api/users/' + userId);
-      if (!res.ok) { document.getElementById('app-content').innerHTML = '<div class="empty-state"><p>User not found</p></div>'; return; }
-      var profile = await res.json();
-      var isOwn = profile.id === currentUser.id;
+      API.getUser(userId, function(err, profile) {
+        if (err) { document.getElementById('app-content').innerHTML = '<div class="empty-state"><p>User not found</p></div>'; return; }
+        var isOwn = profile.id === currentUser.id;
 
-      var teachTags = (profile.teach_skills || []).map(function(s) {
-        return '<span class="skill-tag teach">' + escapeHtml(s) + '</span>';
-      }).join('');
-      var learnTags = (profile.learn_skills || []).map(function(s) {
-        return '<span class="skill-tag learn">' + escapeHtml(s) + '</span>';
-      }).join('');
+        var teachTags = (profile.teach_skills || []).map(function(s) {
+          return '<span class="skill-tag teach">' + escapeHtml(s) + '</span>';
+        }).join('');
+        var learnTags = (profile.learn_skills || []).map(function(s) {
+          return '<span class="skill-tag learn">' + escapeHtml(s) + '</span>';
+        }).join('');
 
-      var posts = (profile.posts || []).map(function(p) {
-        var cat = getCategoryInfo(p.category);
-        var badge = p.type === 'teach' ? '<span class="post-badge teach">&#127891; Teaching</span>' : '<span class="post-badge learn">&#128218; Learning</span>';
-        var deleteBtn = p.author_id === currentUser.id
-          ? '<button class="post-action" style="margin-left:auto" onclick="deletePost(' + p.id + ',this)" aria-label="Delete post"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'
-          : '';
-        return '<div class="post-card anim visible">' +
-          '<div class="post-header">' +
-            '<div class="avatar">' + getInitials(p.author_name) + '</div>' +
-            '<div style="flex:1;min-width:0"><div class="post-author">' + escapeHtml(p.author_name) + '</div><div class="post-time">' + timeAgo(p.created_at) + '</div></div>' +
-            badge +
-          '</div>' +
-          '<div class="post-body">' + escapeHtml(p.body) + '</div>' +
-          '<div class="post-skill-tag">' + cat.icon + ' ' + escapeHtml(p.skill_tag) + '</div>' +
-          '<div class="post-actions">' +
-            '<button class="post-action' + (p.liked ? ' liked' : '') + '">' +
-              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
-              '<span>' + p.like_count + '</span>' +
-            '</button>' +
-            '<button class="post-action">' +
-              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
-              '<span>' + p.comments_count + '</span>' +
-            '</button>' +
-            deleteBtn +
-          '</div>' +
-        '</div>';
-      }).join('');
+        var posts = (profile.posts || []).map(function(p) {
+          var cat = getCategoryInfo(p.category);
+          var badge = p.type === 'teach' ? '<span class="post-badge teach">&#127891; Teaching</span>' : '<span class="post-badge learn">&#128218; Learning</span>';
+          var deleteBtn = p.author_id === currentUser.id
+            ? '<button class="post-action" style="margin-left:auto" onclick="deletePost(' + p.id + ',this)" aria-label="Delete post"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'
+            : '';
+          return '<div class="post-card anim visible">' +
+            '<div class="post-header">' +
+              '<div class="avatar">' + getInitials(p.author_name) + '</div>' +
+              '<div style="flex:1;min-width:0"><div class="post-author">' + escapeHtml(p.author_name) + '</div><div class="post-time">' + timeAgo(p.created_at) + '</div></div>' +
+              badge +
+            '</div>' +
+            '<div class="post-body">' + escapeHtml(p.body) + '</div>' +
+            '<div class="post-skill-tag">' + cat.icon + ' ' + escapeHtml(p.skill_tag) + '</div>' +
+            '<div class="post-actions">' +
+              '<button class="post-action' + (p.liked ? ' liked' : '') + '">' +
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
+                '<span>' + p.like_count + '</span>' +
+              '</button>' +
+              '<button class="post-action">' +
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+                '<span>' + p.comments_count + '</span>' +
+              '</button>' +
+              deleteBtn +
+            '</div>' +
+          '</div>';
+        }).join('');
 
-      var actions = isOwn
-        ? '<button class="btn btn-ghost btn-sm" onclick="showEditModal()">Edit Profile</button>'
-        : '<button class="btn btn-primary btn-sm" onclick="messageUser(' + profile.id + ')">Message</button><button class="btn btn-ghost btn-sm" onclick="scheduleUser(' + profile.id + ',\'' + escapeHtml(profile.username) + '\')">Schedule</button>';
+        var actions = isOwn
+          ? '<button class="btn btn-ghost btn-sm" onclick="showEditModal()">Edit Profile</button>'
+          : '<button class="btn btn-primary btn-sm" onclick="messageUser(' + profile.id + ')">Message</button><button class="btn btn-ghost btn-sm" onclick="scheduleUser(' + profile.id + ',\'' + escapeHtml(profile.username) + '\')">Schedule</button>';
 
-      document.getElementById('app-content').innerHTML =
-        '<div class="profile-container">' +
-          '<div class="profile-card anim visible">' +
-            '<div class="profile-top">' +
-              '<div class="profile-avatar">' + getInitials(profile.username) + '</div>' +
-              '<div>' +
-                '<div class="profile-name">' + escapeHtml(profile.username) + '</div>' +
-                '<div class="profile-bio">' + escapeHtml(profile.bio || 'No bio yet') + '</div>' +
-                '<div class="profile-actions">' + actions + '</div>' +
+        document.getElementById('app-content').innerHTML =
+          '<div class="profile-container">' +
+            '<div class="profile-card anim visible">' +
+              '<div class="profile-top">' +
+                '<div class="profile-avatar">' + getInitials(profile.username) + '</div>' +
+                '<div>' +
+                  '<div class="profile-name">' + escapeHtml(profile.username) + '</div>' +
+                  '<div class="profile-bio">' + escapeHtml(profile.bio || 'No bio yet') + '</div>' +
+                  '<div class="profile-actions">' + actions + '</div>' +
+                '</div>' +
               '</div>' +
             '</div>' +
-          '</div>' +
-          '<div class="skills-box anim visible">' +
-            '<h3 class="teach">&#127891; Skills I Teach</h3>' +
-            '<div class="skill-tags">' + (teachTags || '<span style="color:var(--text-tertiary);font-size:13px">None yet</span>') + '</div>' +
-          '</div>' +
-          '<div class="skills-box anim visible">' +
-            '<h3 class="learn">&#128218; Skills I Want to Learn</h3>' +
-            '<div class="skill-tags">' + (learnTags || '<span style="color:var(--text-tertiary);font-size:13px">None yet</span>') + '</div>' +
-          '</div>' +
-          '<h3 style="margin-bottom:var(--sp-4)">Posts</h3>' +
-          (posts || '<div class="empty-state anim visible"><p>No posts yet</p></div>') +
-        '</div>';
+            '<div class="skills-box anim visible">' +
+              '<h3 class="teach">&#127891; Skills I Teach</h3>' +
+              '<div class="skill-tags">' + (teachTags || '<span style="color:var(--text-tertiary);font-size:13px">None yet</span>') + '</div>' +
+            '</div>' +
+            '<div class="skills-box anim visible">' +
+              '<h3 class="learn">&#128218; Skills I Want to Learn</h3>' +
+              '<div class="skill-tags">' + (learnTags || '<span style="color:var(--text-tertiary);font-size:13px">None yet</span>') + '</div>' +
+            '</div>' +
+            '<h3 style="margin-bottom:var(--sp-4)">Posts</h3>' +
+            (posts || '<div class="empty-state anim visible"><p>No posts yet</p></div>') +
+          '</div>';
 
-      initScrollAnimations();
+        initScrollAnimations();
+      });
     }
 
     function showEditModal() {
@@ -112,37 +113,37 @@
       document.body.appendChild(overlay);
     }
 
-    async function saveProfile(e) {
+    function saveProfile(e) {
       e.preventDefault();
       var bio = document.getElementById('edit-bio').value.trim();
       var teach_skills = document.getElementById('edit-teach').value.split(',').map(function(s){return s.trim()}).filter(Boolean);
       var learn_skills = document.getElementById('edit-learn').value.split(',').map(function(s){return s.trim()}).filter(Boolean);
-      try {
-        await fetch('/api/users/' + currentUser.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bio: bio, teach_skills: teach_skills, learn_skills: learn_skills }) });
+      API.updateUser(currentUser.id, { bio: bio, teach_skills: teach_skills, learn_skills: learn_skills }, function(err, user) {
+        if (err) { showToast('Error saving', 'error'); return; }
         document.querySelector('.modal-overlay').remove();
         showToast('Profile updated!', 'success');
         loadProfile();
-      } catch (e) { showToast('Error saving', 'error'); }
+      });
     }
 
-    async function deletePost(postId, btn) {
+    function deletePost(postId, btn) {
       if (!confirm('Delete this post?')) return;
-      try {
-        await fetch('/api/posts/' + postId, { method: 'DELETE' });
+      API.deletePost(postId, function(err, result) {
+        if (err) { showToast('Error deleting', 'error'); return; }
         var card = btn.closest('.post-card');
         card.style.transition = 'opacity 0.2s, transform 0.2s';
         card.style.transform = 'translateY(-8px)';
         card.style.opacity = '0';
         setTimeout(function() { card.remove(); }, 200);
         showToast('Post deleted', 'success');
-      } catch (e) { showToast('Error deleting', 'error'); }
+      });
     }
 
-    async function messageUser(userId) {
-      try {
-        await fetch('/api/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+    function messageUser(userId) {
+      API.createConversation(userId, function(err, result) {
+        if (err) { showToast('Error', 'error'); return; }
         location.href = 'messages.html';
-      } catch (e) { showToast('Error', 'error'); }
+      });
     }
 
     function scheduleUser(userId, username) {
@@ -164,19 +165,18 @@
       document.body.appendChild(overlay);
     }
 
-    async function submitSchedule(e, userId) {
+    function submitSchedule(e, userId) {
       e.preventDefault();
       var skill_tag = document.getElementById('sched-skill').value.trim();
       var description = document.getElementById('sched-desc').value.trim();
       var scheduled_at = document.getElementById('sched-date').value;
       var duration = parseInt(document.getElementById('sched-dur').value);
       if (!skill_tag || !scheduled_at) { showToast('Fill in all fields', 'error'); return; }
-      try {
-        var res = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participant_id: userId, skill_tag: skill_tag, description: description, scheduled_at: scheduled_at, duration: duration }) });
-        if (!res.ok) { var d = await res.json(); showToast(d.error, 'error'); return; }
+      API.createSession(userId, skill_tag, description, scheduled_at, duration, function(err, result) {
+        if (err) { showToast(err.error || 'Error', 'error'); return; }
         document.querySelector('.modal-overlay').remove();
         showToast('Session created!', 'success');
-      } catch (e) { showToast('Error', 'error'); }
+      });
     }
   </script>
 </body>
