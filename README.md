@@ -65,5 +65,3 @@ skillshare/
 | POST | /api/posts/:id/comments | Add comment |
 | GET | /api/posts/:id/comments | Get comments |
 | DELETE | /api/posts/:id | Delete own post |
-
-## Built by Aditya
